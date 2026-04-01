@@ -9,7 +9,8 @@ import java.util.UUID;
 
 public interface ManageAlertUseCase {
 
-    PriceAlert addAlert(String ticker, BigDecimal threshold, AlertType type);
+    PriceAlert addAlert(UUID userId, String ticker, BigDecimal threshold, AlertType type);
     void removeAlert(UUID alertId);
     List<PriceAlert> getPriceAlerts(UUID userId);
+    List<PriceAlert> getPriceAlertsByTicker(UUID userId, String ticker);
 }
