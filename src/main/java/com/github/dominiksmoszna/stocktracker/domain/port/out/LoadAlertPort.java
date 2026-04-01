@@ -9,5 +9,6 @@ public interface LoadAlertPort {
     List<PriceAlert> loadPriceAlerts(UUID userId);
     List<PriceAlert> loadPriceAlertsByTicker(UUID userId, String ticker);
     PriceAlert loadPriceAlert(UUID alertId);
+    List<PriceAlert> loadPriceAlertsByTicker(String ticker);
 
 }

@@ -10,4 +10,16 @@ public class StockPrice {
     String ticker;
     BigDecimal price;
     Instant timestamp;
+
+    public String getTicker() {
+        return ticker;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    public Instant getTimestamp() {
+        return timestamp;
+    }
 }
