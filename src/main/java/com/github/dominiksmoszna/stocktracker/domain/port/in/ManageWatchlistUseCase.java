@@ -9,7 +9,7 @@ public interface ManageWatchlistUseCase {
 
     void addTicker(String ticker, UUID watchlistId);
     void removeTicker(String ticker, UUID watchlistId);
-    Watchlist addWatchlist(String name);
+    Watchlist addWatchlist(String name, UUID userId);
     void removeWatchlist(UUID watchlistId);
     List<Watchlist> getAllWatchlists(UUID userId);
     Watchlist getWatchlist(UUID watchlistId);

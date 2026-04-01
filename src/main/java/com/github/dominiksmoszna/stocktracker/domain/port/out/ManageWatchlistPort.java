@@ -5,8 +5,8 @@ import com.github.dominiksmoszna.stocktracker.domain.model.Watchlist;
 import java.util.UUID;
 
 public interface ManageWatchlistPort {
-    Watchlist saveWatchlist(Watchlist watchlist);
-    Watchlist addTickerToWatchlist(UUID watchlistId, String ticker);
-    Watchlist removeTickerFromWatchlist(UUID watchlistId, String ticker);
+    void saveWatchlist(Watchlist watchlist);
+    void addTickerToWatchlist(UUID watchlistId, String ticker);
+    void removeTickerFromWatchlist(UUID watchlistId, String ticker);
     void deleteWatchlist(UUID watchlistId);
 }
