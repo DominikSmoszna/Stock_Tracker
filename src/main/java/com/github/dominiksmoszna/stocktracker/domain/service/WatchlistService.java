@@ -5,6 +5,7 @@ import com.github.dominiksmoszna.stocktracker.domain.model.Watchlist;
 import com.github.dominiksmoszna.stocktracker.domain.port.in.ManageWatchlistUseCase;
 import com.github.dominiksmoszna.stocktracker.domain.port.out.LoadWatchlistPort;
 import com.github.dominiksmoszna.stocktracker.domain.port.out.ManageWatchlistPort;
+import com.github.dominiksmoszna.stocktracker.domain.port.out.StockSubscriptionPort;
 import lombok.RequiredArgsConstructor;
 import java.util.List;
 import java.util.Optional;
@@ -15,19 +16,22 @@ public class WatchlistService implements ManageWatchlistUseCase {
 
     private final LoadWatchlistPort loadWatchlistPort;
     private final ManageWatchlistPort manageWatchlistPort;
+    private final StockSubscriptionPort stockSubscriptionPort;
 
 
     @Override
     public void addTicker(String ticker, UUID watchlistId) {
         Optional.ofNullable(loadWatchlistPort.loadWatchlist(watchlistId))
-                .ifPresentOrElse(watchlist -> {manageWatchlistPort.addTickerToWatchlist(watchlistId, ticker);},
+                .ifPresentOrElse(watchlist -> {manageWatchlistPort.addTickerToWatchlist(watchlistId, ticker);
+                                                        stockSubscriptionPort.subscribe(ticker);},
                         () -> {throw new WatchlistNotFoundException("Watchlist not found");});
     }
 
     @Override
     public void removeTicker(String ticker, UUID watchlistId) {
         Optional.ofNullable(loadWatchlistPort.loadWatchlist(watchlistId))
-                .ifPresentOrElse(watchlist -> {manageWatchlistPort.removeTickerFromWatchlist(watchlistId, ticker);},
+                .ifPresentOrElse(watchlist -> {manageWatchlistPort.removeTickerFromWatchlist(watchlistId, ticker);
+                                                        if (!loadWatchlistPort.checkWatchlistsForTicker(ticker)) {stockSubscriptionPort.unsubscribe(ticker);};},
                         () -> {throw new WatchlistNotFoundException("Watchlist not found");});
     }
 

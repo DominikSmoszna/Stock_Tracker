@@ -8,4 +8,5 @@ import java.util.UUID;
 public interface LoadWatchlistPort {
     Watchlist loadWatchlist(UUID watchlistId);
     List<Watchlist> loadAllWatchlists(UUID userId);
+    boolean checkWatchlistsForTicker(String ticker);
 }
