@@ -11,4 +11,20 @@ public class Watchlist {
     UUID userId;
     String listName;
     List<String> watchlist;
+
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public String getListName() {
+        return listName;
+    }
+
+    public List<String> getWatchlist() {
+        return watchlist;
+    }
 }
