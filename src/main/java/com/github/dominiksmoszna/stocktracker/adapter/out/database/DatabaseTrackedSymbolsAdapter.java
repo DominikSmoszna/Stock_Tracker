@@ -12,6 +12,6 @@ public class DatabaseTrackedSymbolsAdapter implements LoadTrackedSymbolsPort {
     @Override
     public List<String> loadAllSymbols() {
         log.info("Loading all symbols");
-        return List.of();
+        return List.of("AAPL", "TSLA");
     }
 }

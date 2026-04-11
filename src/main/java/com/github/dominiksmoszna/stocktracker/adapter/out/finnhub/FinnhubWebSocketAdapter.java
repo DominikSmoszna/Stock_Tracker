@@ -4,12 +4,13 @@ import com.github.dominiksmoszna.stocktracker.domain.port.in.ProcessMarketDataUs
 import com.github.dominiksmoszna.stocktracker.domain.port.out.LoadTrackedSymbolsPort;
 import com.github.dominiksmoszna.stocktracker.domain.port.out.StockSubscriptionPort;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
 
-
+@Slf4j
 @Component
 public class FinnhubWebSocketAdapter implements StockSubscriptionPort {
 
@@ -34,6 +35,7 @@ public class FinnhubWebSocketAdapter implements StockSubscriptionPort {
     @Override
     public void subscribe(String ticker) {
         finnhubWebSocketClient.send(String.format("{\"type\":\"subscribe\",\"symbol\":\"%s\"}", ticker));
+        log.info("Subscribing to: {}", ticker);
     }
 
     @Override
