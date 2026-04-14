@@ -11,6 +11,7 @@ function App() {
   return (
       <BrowserRouter>
           <Navbar />
+          <div className={`transition-all duration-300 ml-16`}>
           <Routes>
               <Route path="/" element = {<HomePage/>} />
               <Route path="/charts" element = {<ChartsPage/>} />
@@ -18,6 +19,7 @@ function App() {
               <Route path="/portfolio" element = {<PortfolioPage/>} />
               <Route path="/etf" element = {<EtfPage/>} />
           </Routes>
+          </div>
       </BrowserRouter>
   )
 }
