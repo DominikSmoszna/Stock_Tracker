@@ -1,6 +1,7 @@
 import {useState, useEffect} from 'react'
 import {Client} from '@stomp/stompjs'
 import SockJS from 'sockjs-client'
+import MarketHours from '../components/MarketHours'
 
 function HomePage() {
     const [prices, setPrices] = useState({})
@@ -24,7 +25,7 @@ function HomePage() {
 
   return (
       <div>
-          <h1>Stock Tracker</h1>
+          <MarketHours/>
           {Object.values(prices).map(price=>(
               <div key={price.ticker}>
                   {price.ticker}: {price.price}
