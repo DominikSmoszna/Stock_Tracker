@@ -86,13 +86,30 @@ function MarketHours() {
                         hour: '2-digit',
                         minute: '2-digit'
                         });
+                    const formatter = new Intl.DateTimeFormat("en-US", {
+                        timeZone: market.timezone,
+                        hour: "numeric",
+                        minute: "numeric",
+                        hour12: false,
+                        });
+                    const parts = formatter.formatToParts(currentTime);
+                    const h = parseInt(parts.find(p => p.type === "hour").value);
+                    const m = parseInt(parts.find(p => p.type === "minute").value);
+                    const currentPos = ((h*60+m)/1440)*100;
+                    const openPos = ((market.openHour*60 + market.openMinute)/1440)*100;
+                    const closePos = ((market.closeHour*60)/1440)*100;
+                    const marketWidth = closePos - openPos;
                     return (
-                        <div key={market.id} className="flex items-center justify-between">
-                            <div className="flex flex-col">
+                        <div key={market.id} className="flex items-center justify-between hover:bg-slate-800 border-b border-slate-800 last:border-0">
+                            <div className="flex flex-col w-[80px]">
                             <span className="text-slate-200 font-medium">{market.name}</span>
                             <span className="text-slate-500 text-[10px] front-mono">{localTimeString}</span>
                             </div>
-                            <div>
+                            <div className="relative h-4 w-full bg-slate-700 rounded-fill overflow-hidden mt-1 m-2">
+                                <div className="absolute h-full bg-slate-300 opacity-40" style={{left: `${openPos}%`, width: `${marketWidth}%`}}></div>
+                                <div className="absolute h-full w-0.5 bg-yellow-400 z-10 shadow-[0_0_10px_rgba(250,204,21,0.8)]" style={{left: `${currentPos}%`}}></div>
+                            </div>
+                            <div className="flex items-center justify-start gap-2 w-[70px] shrink-0">
                                 <span className={`relative flex h-2 w-2`}>
                                     {isOpen && (<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>)}
                                     <span className={`relative inline-flex rounded-full h-2 w-2 ${isOpen? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
