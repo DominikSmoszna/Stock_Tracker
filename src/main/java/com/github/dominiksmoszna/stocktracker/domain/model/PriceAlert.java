@@ -12,24 +12,4 @@ public class PriceAlert {
     String ticker;
     BigDecimal threshold;
     AlertType type;
-
-    public UUID getId() {
-        return id;
-    }
-
-    public UUID getUserId() {
-        return userId;
-    }
-
-    public String getTicker() {
-        return ticker;
-    }
-
-    public BigDecimal getThreshold() {
-        return threshold;
-    }
-
-    public AlertType getType() {
-        return type;
-    }
 }
