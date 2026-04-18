@@ -51,7 +51,7 @@ public class WatchlistService implements ManageWatchlistUseCase {
     }
 
     @Override
-    public List<Watchlist> getAllWatchlists(UUID userId) {
+    public List<Watchlist> getUserWatchlist(UUID userId) {
         return loadWatchlistPort.loadAllWatchlists(userId);
     }
 

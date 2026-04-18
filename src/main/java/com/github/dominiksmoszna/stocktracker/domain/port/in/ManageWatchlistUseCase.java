@@ -11,6 +11,6 @@ public interface ManageWatchlistUseCase {
     void removeTicker(String ticker, UUID watchlistId);
     Watchlist addWatchlist(String name, UUID userId);
     void removeWatchlist(UUID watchlistId);
-    List<Watchlist> getAllWatchlists(UUID userId);
+    List<Watchlist> getUserWatchlist(UUID userId);
     Watchlist getWatchlist(UUID watchlistId);
 }
