@@ -6,7 +6,7 @@ function Navbar() {
   const [isExpanded, setIsExpanded] = useState(false);
   return (
     <div
-    className={`fixed left-0 top-0 h-full bg-gray-900 transition-all duration-300 ${isExpanded ? 'w-48' : 'w-16'}`}
+    className={`fixed left-0 top-0 h-full bg-gray-900 transition-all z-50 duration-300 ${isExpanded ? 'w-48' : 'w-16'}`}
     onMouseEnter={()=> setIsExpanded(true)}
     onMouseLeave={()=> setIsExpanded(false)}
     >
