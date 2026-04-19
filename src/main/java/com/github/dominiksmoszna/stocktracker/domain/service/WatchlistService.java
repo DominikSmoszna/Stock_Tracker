@@ -31,7 +31,7 @@ public class WatchlistService implements ManageWatchlistUseCase {
     public void removeTicker(String ticker, UUID watchlistId) {
         Optional.ofNullable(loadWatchlistPort.loadWatchlist(watchlistId))
                 .ifPresentOrElse(watchlist -> {manageWatchlistPort.removeTickerFromWatchlist(watchlistId, ticker);
-                                                        if (!loadWatchlistPort.checkWatchlistsForTicker(ticker)) {stockSubscriptionPort.unsubscribe(ticker);};},
+                                                        if (!loadWatchlistPort.checkWatchlistForTicker(ticker)) {stockSubscriptionPort.unsubscribe(ticker);};},
                         () -> {throw new WatchlistNotFoundException("Watchlist not found");});
     }
 
@@ -52,7 +52,7 @@ public class WatchlistService implements ManageWatchlistUseCase {
 
     @Override
     public List<Watchlist> getUserWatchlist(UUID userId) {
-        return loadWatchlistPort.loadAllWatchlists(userId);
+        return loadWatchlistPort.loadUserWatchlist(userId);
     }
 
     @Override
