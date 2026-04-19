@@ -91,14 +91,18 @@ function MarketHours() {
                         hour: "numeric",
                         minute: "numeric",
                         hour12: false,
+                        weekday: "short"
                         });
                     const parts = formatter.formatToParts(currentTime);
-                    const h = parseInt(parts.find(p => p.type === "hour").value);
-                    const m = parseInt(parts.find(p => p.type === "minute").value);
+                    const getPart = (type) => parts.find((p) => p.type === type).value
+                    const h = parseInt(getPart("hour"));
+                    const m = parseInt(getPart("minute"));
+                    const localDay = getPart("weekday");
                     const currentPos = ((h*60+m)/1440)*100;
                     const openPos = ((market.openHour*60 + market.openMinute)/1440)*100;
                     const closePos = ((market.closeHour*60)/1440)*100;
                     const marketWidth = closePos - openPos;
+                    const isWeekend = localDay === "Sat" || localDay === "Sun";
                     return (
                         <div key={market.id} className="flex items-center justify-between hover:bg-slate-800 border-b border-slate-800 last:border-0">
                             <div className="flex flex-col w-[80px]">
@@ -106,7 +110,9 @@ function MarketHours() {
                             <span className="text-slate-500 text-[10px] front-mono">{localTimeString}</span>
                             </div>
                             <div className="relative h-4 w-full bg-slate-700 rounded-fill overflow-hidden mt-1 m-2">
+                                {!isWeekend && (
                                 <div className="absolute h-full bg-slate-300 opacity-40" style={{left: `${openPos}%`, width: `${marketWidth}%`}}></div>
+                                )}
                                 <div className="absolute h-full w-0.5 bg-yellow-400 z-10 shadow-[0_0_10px_rgba(250,204,21,0.8)]" style={{left: `${currentPos}%`}}></div>
                             </div>
                             <div className="flex items-center justify-start gap-2 w-[70px] shrink-0">
