@@ -19,6 +19,6 @@ public class InMemoryStockCache implements CurrentPricePort, SaveCurrentPricePor
 
     @Override
     public void saveCurrentPrice(StockPrice stockPrice) {
-        stockPrices.put(stockPrice.getTicker(), stockPrice);
+        stockPrices.put(stockPrice.ticker(), stockPrice);
     }
 }

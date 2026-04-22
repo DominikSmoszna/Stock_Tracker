@@ -62,11 +62,11 @@ public class DatabaseAlertAdapter implements LoadAlertPort, ManageAlertPort {
 
     private AlertEntity toEntity(PriceAlert alert) {
         return new AlertEntity(
-                alert.getId(),
-                alert.getUserId(),
-                alert.getTicker(),
-                alert.getThreshold(),
-                alert.getType()
+                alert.id(),
+                alert.userId(),
+                alert.ticker(),
+                alert.threshold(),
+                alert.type()
         );
     }
 

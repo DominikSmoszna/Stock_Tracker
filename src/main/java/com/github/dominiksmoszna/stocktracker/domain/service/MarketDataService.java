@@ -23,14 +23,14 @@ public class MarketDataService implements ProcessMarketDataUseCase {
     @Override
     public StockPrice processPrice(StockPrice stockPrice) {
         // preserved for future percentage change calculation
-        StockPrice currentPrice = Optional.ofNullable(currentPricePort.getCurrentPrice(stockPrice.getTicker()))
+        StockPrice currentPrice = Optional.ofNullable(currentPricePort.getCurrentPrice(stockPrice.ticker()))
                 .orElse(stockPrice);
         saveCurrentPricePort.saveCurrentPrice(stockPrice);
-        List<PriceAlert> alerts = loadAlertPort.loadPriceAlertsByTicker(stockPrice.getTicker());
+        List<PriceAlert> alerts = loadAlertPort.loadPriceAlertsByTicker(stockPrice.ticker());
         alerts.stream().filter(alert ->
-                ((alert.getType() == AlertType.ABOVE && (stockPrice.getPrice().compareTo(alert.getThreshold())>0)) ||
-                (alert.getType() == AlertType.BELOW && (stockPrice.getPrice().compareTo(alert.getThreshold())<0)))
-        ).forEach(alert -> sendNotificationPort.sendNotification(alert, stockPrice.getPrice()));
+                ((alert.type() == AlertType.ABOVE && (stockPrice.price().compareTo(alert.threshold())>0)) ||
+                (alert.type() == AlertType.BELOW && (stockPrice.price().compareTo(alert.threshold())<0)))
+        ).forEach(alert -> sendNotificationPort.sendNotification(alert, stockPrice.price()));
         priceUpdatePort.updateCurrentPrice(stockPrice);
         return stockPrice;
     }

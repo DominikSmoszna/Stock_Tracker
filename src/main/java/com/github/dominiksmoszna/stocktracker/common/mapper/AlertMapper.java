@@ -10,11 +10,11 @@ public class AlertMapper {
 
     public static AlertDto toDto(PriceAlert priceAlert) {
         return new AlertDto(
-                priceAlert.getId(),
-                priceAlert.getUserId(),
-                priceAlert.getTicker(),
-                priceAlert.getThreshold(),
-                priceAlert.getType()
+                priceAlert.id(),
+                priceAlert.userId(),
+                priceAlert.ticker(),
+                priceAlert.threshold(),
+                priceAlert.type()
         );
     }
 

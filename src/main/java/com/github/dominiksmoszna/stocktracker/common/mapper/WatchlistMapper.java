@@ -9,10 +9,10 @@ public class WatchlistMapper {
 
     public static WatchlistDto toDto(Watchlist watchlist) {
         return new WatchlistDto(
-                watchlist.getId(),
-                watchlist.getUserId(),
-                watchlist.getListName(),
-                watchlist.getWatchlist()
+                watchlist.id(),
+                watchlist.userId(),
+                watchlist.listName(),
+                watchlist.watchlist()
         );
     }
 

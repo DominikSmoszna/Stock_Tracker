@@ -45,7 +45,7 @@ public class DatabaseWatchlistAdapter implements LoadWatchlistPort, ManageWatchl
     public void saveWatchlist(Watchlist watchlist) {
         WatchlistEntity entity = toEntity(watchlist);
         repository.save(entity);
-        log.info("Saving watchlist - Watchlist Id: {}, Watchlist Title: {}", watchlist.getId(), watchlist.getListName());
+        log.info("Saving watchlist - Watchlist Id: {}, Watchlist Title: {}", watchlist.id(), watchlist.listName());
     }
 
     @Override
@@ -77,10 +77,10 @@ public class DatabaseWatchlistAdapter implements LoadWatchlistPort, ManageWatchl
 
     private WatchlistEntity toEntity(Watchlist watchlist) {
         return new WatchlistEntity(
-                watchlist.getId(),
-                watchlist.getUserId(),
-                watchlist.getListName(),
-                watchlist.getWatchlist()
+                watchlist.id(),
+                watchlist.userId(),
+                watchlist.listName(),
+                watchlist.watchlist()
         );
     }
 

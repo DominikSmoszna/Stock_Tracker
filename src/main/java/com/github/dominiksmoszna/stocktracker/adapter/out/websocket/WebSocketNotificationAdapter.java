@@ -13,6 +13,6 @@ public class WebSocketNotificationAdapter implements SendNotificationPort {
 
     @Override
     public void sendNotification(PriceAlert priceAlert, BigDecimal currentPrice) {
-        log.info("Alert triggered - Ticker: {}, Type: {}, Threshold: {}, Current price: {}", priceAlert.getTicker(), priceAlert.getType(), priceAlert.getThreshold(), currentPrice);
+        log.info("Alert triggered - Ticker: {}, Type: {}, Threshold: {}, Current price: {}", priceAlert.ticker(), priceAlert.type(), priceAlert.threshold(), currentPrice);
     }
 }
