@@ -40,6 +40,7 @@ public class FinnhubRestClient implements MarketDataPort {
                 dto.low(),
                 dto.open(),
                 dto.previousClose(),
+                dto.timestamp(),
                 symbol.toUpperCase()
         );
     }

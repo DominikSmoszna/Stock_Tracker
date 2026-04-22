@@ -1,7 +1,5 @@
 package com.github.dominiksmoszna.stocktracker.adapter.in.rest;
 
-import com.github.dominiksmoszna.stocktracker.adapter.out.finnhub.FinnhubQuoteDTO;
-import com.github.dominiksmoszna.stocktracker.adapter.out.finnhub.FinnhubRestClient;
 import com.github.dominiksmoszna.stocktracker.application.dto.MarketQuoteDto;
 import com.github.dominiksmoszna.stocktracker.domain.model.StockQuote;
 import com.github.dominiksmoszna.stocktracker.domain.port.in.GetMarketQuoteUseCase;
@@ -29,6 +27,7 @@ public class MarketController {
                 quote.low(),
                 quote.open(),
                 quote.previousClose(),
+                quote.timestamp(),
                 symbol.toUpperCase()
         );
     }
