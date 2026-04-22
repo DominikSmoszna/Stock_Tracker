@@ -15,4 +15,7 @@ public interface WatchlistJpaRepository extends JpaRepository<WatchlistEntity, U
     @Query("SELECT COUNT(w)>0 FROM WatchlistEntity w JOIN w.tickers t WHERE t = :ticker")
     boolean existsByTicker(@Param("ticker") String ticker);
 
+    @Query("SELECT DISTINCT t FROM WatchlistEntity w JOIN w.tickers t")
+    List<String> findAllDistinctTickers();
+
 }
