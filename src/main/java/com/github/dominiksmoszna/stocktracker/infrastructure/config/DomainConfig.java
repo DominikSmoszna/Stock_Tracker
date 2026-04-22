@@ -3,6 +3,7 @@ package com.github.dominiksmoszna.stocktracker.infrastructure.config;
 import com.github.dominiksmoszna.stocktracker.domain.port.out.*;
 import com.github.dominiksmoszna.stocktracker.domain.service.AlertService;
 import com.github.dominiksmoszna.stocktracker.domain.service.MarketDataService;
+import com.github.dominiksmoszna.stocktracker.domain.service.MarketQuoteService;
 import com.github.dominiksmoszna.stocktracker.domain.service.WatchlistService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -50,6 +51,15 @@ public class DomainConfig {
         return new AlertService(
                 loadAlertPort,
                 manageAlertPort
+        );
+    }
+
+    @Bean
+    public MarketQuoteService marketQuoteService(
+            MarketDataPort marketDataPort
+    ){
+        return new MarketQuoteService(
+                marketDataPort
         );
     }
 
