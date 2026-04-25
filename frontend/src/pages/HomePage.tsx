@@ -2,9 +2,10 @@ import {useState, useEffect} from 'react'
 import {Client} from '@stomp/stompjs'
 import SockJS from 'sockjs-client'
 import MarketHours from '../components/MarketHours'
+import MarketIndices from '../components/MarketIndices'
 
 function HomePage() {
-    const [prices, setPrices] = useState({})
+    const [prices, setPrices] = useState<Record<string, StockPrice>>({})
 
     useEffect(()=> {
         const client = new Client({
@@ -26,6 +27,7 @@ function HomePage() {
   return (
       <div>
           <MarketHours/>
+          <MarketIndices/>
           {Object.values(prices).map(price=>(
               <div key={price.ticker}>
                   {price.ticker}: {price.price}

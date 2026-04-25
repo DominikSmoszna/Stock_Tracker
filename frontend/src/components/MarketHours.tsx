@@ -40,7 +40,6 @@ const MARKET_DATA = [
 
 ]
 
-
 function MarketHours() {
     const [currentTime, setCurrentTime] = useState(new Date())
 
@@ -76,7 +75,7 @@ function MarketHours() {
             }
 
     return (
-        <div className="p-4 bg-slate-900 rounded-xl border border-slate-800 shadow-lg">
+        <div className="p-4 bg-slate-900 rounded-xl border border-slate-800 shadow-lg w-[90%] mx-auto">
             <h3 className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-4">Market Status</h3>
             <div className="space-y-3">
                 {MARKET_DATA.map((market) => {
@@ -109,7 +108,7 @@ function MarketHours() {
                             <span className="text-slate-200 font-medium">{market.name}</span>
                             <span className="text-slate-500 text-[10px] front-mono">{localTimeString}</span>
                             </div>
-                            <div className="relative h-4 w-full bg-slate-700 rounded-fill overflow-hidden mt-1 m-2">
+                            <div className="relative h-4 w-full bg-gray-700 rounded-fill overflow-hidden mt-1 m-2">
                                 {!isWeekend && (
                                 <div className="absolute h-full bg-slate-300 opacity-40" style={{left: `${openPos}%`, width: `${marketWidth}%`}}></div>
                                 )}
