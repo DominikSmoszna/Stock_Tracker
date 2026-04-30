@@ -21,6 +21,7 @@ public class FinnhubRestClient implements MarketDataPort {
         this.apiKey = apiKey;
     }
 
+    @Override
     public StockQuote getQuote(String symbol) {
         FinnhubQuoteDTO dto = restClient.get()
                 .uri("/quote?symbol={symbol}&token={token}", symbol.toUpperCase(), apiKey)

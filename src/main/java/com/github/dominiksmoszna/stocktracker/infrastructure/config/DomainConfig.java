@@ -1,10 +1,7 @@
 package com.github.dominiksmoszna.stocktracker.infrastructure.config;
 
 import com.github.dominiksmoszna.stocktracker.domain.port.out.*;
-import com.github.dominiksmoszna.stocktracker.domain.service.AlertService;
-import com.github.dominiksmoszna.stocktracker.domain.service.MarketDataService;
-import com.github.dominiksmoszna.stocktracker.domain.service.MarketQuoteService;
-import com.github.dominiksmoszna.stocktracker.domain.service.WatchlistService;
+import com.github.dominiksmoszna.stocktracker.domain.service.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -60,6 +57,15 @@ public class DomainConfig {
     ){
         return new MarketQuoteService(
                 marketDataPort
+        );
+    }
+
+    @Bean
+    public PriceHistoryService priceHistoryService(
+            GetPriceHistoryPort priceHistoryPort
+    ){
+        return new PriceHistoryService(
+                priceHistoryPort
         );
     }
 
