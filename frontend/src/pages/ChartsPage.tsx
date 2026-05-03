@@ -1,6 +1,7 @@
-import {useState, useEffect} from 'react'
+import {useState, useEffect, useMemo} from 'react'
 import { motion } from 'framer-motion';
 import Chart from 'react-apexcharts';
+import {filterDataByRange, getBaseCandleOptions, getVolumeOptions} from '../utils/stockUtils/chartConfig'
 
 function ChartsPage() {
 
@@ -11,6 +12,13 @@ function ChartsPage() {
   const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<'1M' | '3M' | '6M' | '1Y'>('1M');
   const [showVolume, setShowVolume] = useState<boolean>(false);
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const [showSMA, setShowSMA] = useState<boolean>(false);
+  const [showEMA, setShowEMA] = useState<boolean>(false);
+  const [showRSI, setShowRSI] = useState<boolean>(false);
+  const [showMACD, setShowMACD] = useState<boolean>(false);
+  const [showATR, setShowATR] = useState<boolean>(false);
+  const [showBollingerBands, setShowBollingerBands] = useState<boolean>(false);
 
   useEffect(() => {
         const fetchHistoryPrices = async (symbol: string) => {
@@ -25,63 +33,27 @@ function ChartsPage() {
         if(symbol){fetchHistoryPrices(symbol);}
   },[symbol]);
 
-const filterData = (data: HistoricalPrice[], range: '1M' | '3M' | '6M' | '1Y') => {
-      const now = new Date();
-      const months = range === '1M' ? 1 : range === '3M' ? 3 : range === '6M' ? 6 : 12;
-      const cutoff = new Date(now.setMonth(now.getMonth()-months));
-      return data.filter(d => new Date(d.date) >= cutoff);
-  }
+  const filteredData = useMemo(() =>
+    filterDataByRange(data, timeRange),
+  [data, timeRange]);
 
-  const filteredData = filterData(data, timeRange);
-
-  const candleSeries = [{
+  const candleSeries = useMemo(() => [{
       data: [...filteredData].reverse().map(d => ({
           x: d.date,
           y: [d.open, d.high, d.low, d.close]
           }))
-      }];
+      }], [filteredData]);
 
-  const volumeSeries = [{
+  const volumeSeries = useMemo(() => [{
       name: 'Volume',
       data: [...filteredData].reverse().map(d => ({
           x: d.date,
           y: d.volume
           }))
-      }];
+      }], [filteredData]);
 
-  const chartOptions: any = {
-        chart: {id: 'basic-bar', type: 'candlestick', toolbar: {show: false}, animations: {enabled: false}  },
-        xaxis: {type: 'category', tickAmount: 10,
-            labels: {
-                formatter: function(val:string) {
-                if(!val) return '';
-                const d = new Date(val);
-                return d.toLocaleDateString('pl-PL', {day: '2-digit', month: 'short'});
-                }
-            }
-        },
-        yaxis: {tooltip: {enabled: true} },
-        plotOptions: {
-            candlestick: {
-                colors: {upward: '#22c55e', downward: '#ef4444'}
-                }
-        },
-        axisTicks: {show: false}
-      };
-
-  const volumeOptions: any = {
-        chart: {type: 'bar', toolbar: {show: false}, sparkline: {enabled: true} },
-        plotOptions: {bar: {columnWidth: '80%', colors: {ranges: [{from:0, to: 999999999, color: '94a3b8'}] }}},
-        xaxis: {type: 'category', tickAmount: 10,
-            labels: {
-                formatter: function(val:string) {
-                    if(!val) return '';
-                    const d = new Date(val);
-                    return d.toLocaleDateString('pl-PL', {day: '2-digit', month: 'short'});
-            }}
-      }
-  }
-
+  const chartOptions = useMemo(() => getBaseCandleOptions(showVolume), [showVolume]);
+  const volumeOptions = useMemo(() => getVolumeOptions(), []);
 
   return (
     <div className="max-w-4xl mx-auto p-6 rounded-xl shadow-lg border border-slate-100">
@@ -96,31 +68,43 @@ const filterData = (data: HistoricalPrice[], range: '1M' | '3M' | '6M' | '1Y') =
             </div>
         </div>
         <div className="flex flex-col sm:flex-row justify-between gap-4 mb-8">
-        <div className="flex items-center gap-1 mb-6 bg-slate-100 p-1 rounded-xl w-fit">
-            {(['1M','3M','6M','1Y'] as const).map(range => (
-                <button key={range} onClick={()=>setTimeRange(range)}
-                    className={`relative px-4 py-1.5 rounded-lg text-sm font-semibold transition-all
-                        ${timeRange === range ? ' text-blue-800 hover:text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                <span className="relative z-20">{range}</span>
-                {timeRange === range && (
-                    <motion.div
-                        layoutId="activeTab"
-                        className="absolute inset-0 bg-white rounded-lg shadow-sm z-10"
-                        transition={{type: "spring", bounce: 0.2, duration: 0.6}}
-                    />
-                    )}
+            <div className="flex items-center gap-1 mb-6 bg-slate-100 p-1 rounded-xl w-fit">
+                {(['1M','3M','6M','1Y'] as const).map(range => (
+                    <button key={range} onClick={()=>setTimeRange(range)}
+                        className={`relative px-4 py-1.5 rounded-lg text-sm font-semibold transition-all
+                            ${timeRange === range ? ' text-blue-800 hover:text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                    <span className="relative z-20">{range}</span>
+                    {timeRange === range && (
+                        <motion.div
+                            layoutId="activeTab"
+                            className="absolute inset-0 bg-white rounded-lg shadow-sm z-10"
+                            transition={{type: "spring", bounce: 0.2, duration: 0.6}}
+                        />
+                        )}
+                    </button>
+                ))}
+            </div>
+            <div className="relative">
+                <button onClick={()=> setIsMenuOpen(!isMenuOpen)} className="flex items-center gap-2 px-4 py-1.5 bg-white border border-slate rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
+                    <span>Indicators</span>
+                    <svg className={`w-4 h-4 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
+                    </svg>
                 </button>
-            ))}
-        </div>
-        <div className="flex items-center gap-1 mb-6">
-            <span className="ml-3 text-sm font-medium text-gray-900">Show Volume </span>
-            <label className="relative inline-flex flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" className="sr-only peer" checked={showVolume} onChange={()=> setShowVolume(!showVolume)}/>
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                <span className="ml-3 text-sm font-medium text-gray-900 mic-w-[30px]">{showVolume ? 'ON' : 'OFF'}</span>
-            </label>
-        </div>
+                {isMenuOpen && (<>
+                    <div className="fixed inset-0 z-30" onClick={()=> setIsMenuOpen(false)}/>
+                    <div className="absolute left-0 sm:left-auto sm:right-0 lg:left-auto lg:right-0 mt-2 w-48 bg-white border border-slate rounded-xl shadow-xl z-40 p-2">
+                        <label className="flex justify-between px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
+                            <span className="ml-3 text-sm font-medium text-gray-900">Show Volume </span>
+                            <div className="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" className="sr-only peer" checked={showVolume} onChange={()=> setShowVolume(!showVolume)}/>
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </div>
+                        </label>
+                    </div>
+                </>)}
+            </div>
         </div>
         <div className="w-full p-4 bg-gray-50 rounded-xl border border-gray-200">
             <Chart options={chartOptions} series={candleSeries} type="candlestick" height={300} />
