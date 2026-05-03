@@ -17,19 +17,19 @@ function MarketIndices() {
                     fetch(`http://localhost:8080/api/market/quote/${symbol}`).then(res =>{
                         if(!res.ok) throw new Error(`Error occurred during fetching symbol: ${symbol}`);
                         return res.json();
-                        })
-                    );
+                    })
+                );
 
                 const results = await Promise.all(request);
                 setQuoteList(results);
-                }catch (err) {
-                    setError(err instanceof Error ? err.message : 'Unexpected error occurred');
-                    } finally{
-                        setLoadingState(false);
-                        }
-            };
+            }catch (err) {
+                setError(err instanceof Error ? err.message : 'Unexpected error occurred');
+            } finally{
+                setLoadingState(false);
+            }
+        };
         fetchIndices();
-        },[]);
+    },[]);
 
     if (loadingState) {
         return <div className="p-4 text-gray-500">Loading indices...</div>;

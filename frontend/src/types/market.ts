@@ -15,3 +15,16 @@ export interface MarketQuote {
     symbol: string
     timestamp: number
     }
+
+export interface HistoricalPrice {
+    ticker: string
+    date: string
+    open: number
+    high: number
+    low: number
+    close: number
+    volume: number
+    change: number
+    changePercent: number
+    vwap: number
+    }
