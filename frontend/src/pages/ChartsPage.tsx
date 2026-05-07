@@ -1,10 +1,10 @@
 import {useState, useEffect, useMemo} from 'react'
 import { motion } from 'framer-motion';
 import Chart from 'react-apexcharts';
-import {filterDataByRange, getBaseCandleOptions, getVolumeOptions} from '../utils/stockUtils/chartConfig'
+import {filterDataByRange, getBaseCandleOptions, getVolumeOptions} from '../utils/stockUtils/chartConfig';
+import {calculateSMA, calcBollingerBands} from '../utils/stockUtils/indicators';
 
 function ChartsPage() {
-
   const [symbol, setSymbol] = useState<string>('');
   const [inputValue, setInputValue] = useState<string>('')
   const [data, setData] = useState<HistoricalPrice[]>([]);
@@ -15,10 +15,11 @@ function ChartsPage() {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [showSMA, setShowSMA] = useState<boolean>(false);
   const [showEMA, setShowEMA] = useState<boolean>(false);
+  const [showBollingerBands, setShowBollingerBands] = useState<boolean>(false);
+  const [showPBEMA, setShowPBEMA] = useState<boolean>(false);
   const [showRSI, setShowRSI] = useState<boolean>(false);
   const [showMACD, setShowMACD] = useState<boolean>(false);
   const [showATR, setShowATR] = useState<boolean>(false);
-  const [showBollingerBands, setShowBollingerBands] = useState<boolean>(false);
 
   useEffect(() => {
         const fetchHistoryPrices = async (symbol: string) => {
@@ -27,7 +28,7 @@ function ChartsPage() {
                 const response = await fetch(`http://localhost:8080/api/market/history/${symbol}`);
                 if(!response.ok){throw new Error(`Error occurred during fetching symbol: ${symbol}`);}
                 const result = await response.json();
-                setData(result.sort((a: any, b:any)=> new Date(a.data).getTime() - new Date(b.data).getTime()));
+                setData(result.sort((a: any, b:any)=> new Date(a.date).getTime() - new Date(b.date).getTime()));
             }catch (err) {setError(err instanceof Error ? err.message : 'Unexpected error occurred');} finally{setLoadingState(false)}
         };
         if(symbol){fetchHistoryPrices(symbol);}
@@ -46,11 +47,57 @@ function ChartsPage() {
 
   const volumeSeries = useMemo(() => [{
       name: 'Volume',
-      data: [...filteredData].reverse().map(d => ({
+      type: 'bar',
+      data: [...filteredData].map(d => ({
           x: d.date,
           y: d.volume
           }))
       }], [filteredData]);
+
+  const bbData = useMemo(() => {
+      if (!showBollingerBands || filteredData.length === 0) return [];
+      return calcBollingerBands(filteredData, 20);
+      }, [filteredData, showBollingerBands]);
+
+  const smaData = useMemo(() => {
+      if (!showSMA || filteredData.length === 0) return [];
+      return calculateSMA(filteredData, 20);
+      }, [filteredData, showSMA]);
+
+  const mainChartSeries = useMemo(() => {
+      const series: any[] = [{
+          name: 'Cena',
+          type: 'candlestick',
+          data: filteredData.map(d => ({
+              x: d.date,
+              y: [d.open, d.high, d.low, d.close]
+              }))
+          }];
+          if (showBollingerBands && bbData.length > 0){
+              ['upper', 'middle', 'lower'].forEach((key) => {
+                  series.push({
+                      name: `BB ${key.toUpperCase()}`,
+                      type: 'line',
+                      data: [...filteredData].map((d, idx) => ({
+                          x: d.date,
+                          y: bbData[idx]?.[key as keyof typeof bbData[0]] ?? null
+                          }))
+                      });
+                  });
+              }
+          if(showSMA && smaData.length > 0){
+              console.log("Dane SMA:", smaData);
+                  series.push({
+                      name: 'SMA 50',
+                      type: 'line',
+                      data: [...filteredData].map((d, idx) => ({
+                          x: d.date,
+                          y: smaData[idx]?.y ?? null
+                          }))
+                      });
+              }
+          return series;
+      }, [filteredData, bbData, showBollingerBands, smaData, showSMA]);
 
   const chartOptions = useMemo(() => getBaseCandleOptions(showVolume), [showVolume]);
   const volumeOptions = useMemo(() => getVolumeOptions(), []);
@@ -102,12 +149,26 @@ function ChartsPage() {
                                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                             </div>
                         </label>
+                        <label className="flex justify-between px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
+                            <span className="ml-3 text-sm font-medium text-gray-900">Show BB</span>
+                            <div className="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" className="sr-only peer" checked={showBollingerBands} onChange={()=> setShowBollingerBands(!showBollingerBands)}/>
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </div>
+                        </label>
+                        <label className="flex justify-between px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
+                            <span className="ml-3 text-sm font-medium text-gray-900">Show SMA</span>
+                            <div className="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" className="sr-only peer" checked={showSMA} onChange={()=> setShowSMA(!showSMA)}/>
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </div>
+                        </label>
                     </div>
                 </>)}
             </div>
         </div>
         <div className="w-full p-4 bg-gray-50 rounded-xl border border-gray-200">
-            <Chart options={chartOptions} series={candleSeries} type="candlestick" height={300} />
+            <Chart options={chartOptions} series={mainChartSeries} type="line" height={350} />
         </div>
         { showVolume &&
         <div className="w-full p-4 bg-gray-50 rounded-b-xl border border-gray-200 -mt-4 relative z-0">
