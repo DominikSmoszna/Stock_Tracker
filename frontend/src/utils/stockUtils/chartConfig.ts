@@ -14,36 +14,34 @@ export const xAxisFormatter = (val: number | string) => {
     return d.toLocaleDateString('pl-PL', {day: '2-digit', month: 'short'});
     };
 
+const COMMON_AXIS_STYLES = {
+    labels: {
+        style: {colors: '#64748b', fontSize: '12px'},
+        formatter: (val: string | number) => xAxisFormatter(val)
+        },
+        axisTicks: {show: false},
+        axisBorder: {show: false}
+    }
+
 export const getBaseCandleOptions = (showVolume: boolean): any => ({
     chart: {
         id: 'main-chart',
         group: 'stock-sync',
         type: 'candlestick',
         toolbar: {show: false},
-        animations: {enabled: false}
+        animations: {enabled: true}
         },
     legend: {show: false},
     xaxis: {
         type: 'category',
         tickAmount: 10,
-        labels: {
-            formatter: (val: string) => {
-                if(!val) return '';
-                const d = new Date(val);
-                return d.toLocaleDateString('pl-PL', { day: '2-digit', month: 'short' });
-                },
-            style: {colors: '#64748b'}
-            },
-        axisTicks: {show: false},
-            axisBorder: {show: false}
+        ...COMMON_AXIS_STYLES
         },
     yaxis: {
         opposite: true,
         tooltip: {enabled: true},
         labels: {
-            formatter: (val: number) => {
-                return val.toFixed(2);
-                },
+            formatter: (val: number) => val.toFixed(2),
             style: {colors: '#64748b'}
             }
         },
@@ -54,20 +52,40 @@ export const getBaseCandleOptions = (showVolume: boolean): any => ({
             }
         },
     grid: {
+        show: true,
         borderColor: '#f1f5f9',
-        padding: {bottom: showVolume ? -20 : 0}
+        padding: {left: 30, right: 30}
         },
     tooltip: {
         enabled: true,
         shared: true,
         intersect: false,
-        followCursor: true,
+        fixed: {
+            enabled: true,
+            position: 'topLeft',
+            offsetX: -10,
+            offsetY: 0,
+            },
         custom: function({series, seriesIndex, dataPointIndex, w}: any){
+
+            const hasCandleData = w.globals.seriesCandleO && w.globals.seriesCandleO[0] && w.globals.seriesCandleO[0][dataPointIndex] !== undefined;
+            const date = w.globals.categoryLabels[dataPointIndex];
+
+            if (!hasCandleData){
+                let val = series[seriesIndex][dataPointIndex];
+                return `
+                    <div class="p-2 shadow-lg">
+                        <div class="text-xs font-bold text-gray-500">${date}</div>
+                        <div class="text-sm font-bold">${val !== null ? val.toFixed(2) : 'N/A'}</div>
+                    </div>
+                `;
+                }
+
+
             const o = w.globals.seriesCandleO[0][dataPointIndex];
             const h = w.globals.seriesCandleH[0][dataPointIndex];
             const l = w.globals.seriesCandleL[0][dataPointIndex];
             const c = w.globals.seriesCandleC[0][dataPointIndex];
-            const date = w.globals.categoryLabels[dataPointIndex];
 
             let html = `
                 <div class="p-2 shadow-lg border-0" style="font-family: inherit;">
@@ -77,7 +95,15 @@ export const getBaseCandleOptions = (showVolume: boolean): any => ({
                     <div><span class="text-gray-400 text-[10px] uppercase">H:</span> <span class="font-mono font-bold">${h?.toFixed(2)}</span></div>
                     <div><span class="text-gray-400 text-[10px] uppercase">L:</span> <span class="font-mono font-bold">${l?.toFixed(2)}</span></div>
                     <div><span class="text-gray-400 text-[10px] uppercase">C:</span> <span class="font-mono font-bold ${c >= o ? 'text-green-500' : 'text-red-500'}">${c?.toFixed(2)}</span></div>
-                </div></div>`;
+                </div>`;
+
+            w.config.series.forEach((s: any, i: number) => {
+                if(s.type === 'line' && series[i][dataPointIndex] !== null) {
+                        html += `<div class="text-[10px] text-gray-600">${s.name}: <b>${series[i][dataPointIndex]?.toFixed(2)}</b></div>`;
+                    }
+                })
+
+            html += `</div>`
             return html;
             },
         marker: {show: true},
@@ -124,7 +150,7 @@ export const getVolumeOptions = (): any => ({
         },
     grid: {
         show: false,
-        padding: {top: -20}
+        padding: {left: 30, right: 30}
         },
     dataLabels: {enabled: false},
     tooltip: {
@@ -135,5 +161,48 @@ export const getVolumeOptions = (): any => ({
                 return val.toString();
                 }
             }
+        }
+    });
+
+export const getRSIOptions = (): any => ({
+    chart: {
+        id: 'rsi-chart',
+        group: 'stock-sync',
+        type: 'line',
+        height: 150,
+        toolbar: {show: false},
+        brush: {enabled: false},
+        selection: {enabled: false},
+        sparkline: {enabled: false},
+        padding: {left: 30, right: 30}
+        },
+    colors: ['#8b5cf6'],
+    stroke: {width: 2},
+    annotations: {
+        yaxis: [
+            {y:30, borderColor: '#ef4444', strokeDashArray:4, label: {text: 'Oversold', position: 'right', offsetX: -10, style:{color: '#ef4444', background: 'transparent'}}},
+            {y:70, borderColor: '#ef4444', strokeDashArray:4, label: {text: 'Overbought', position: 'right', offsetX: -10, style:{color: '#ef4444', background: 'transparent'}}}
+            ]
+        },
+    yaxis: {
+        min: 0,
+        max: 100,
+        tickAmount: 4,
+        opposite: true,
+        forceNiceScale: false,
+        labels: {
+            show: true,
+            formatter: (val: number) => val.toFixed(0),
+            style: {colors: '#64748b'}
+            }
+        },
+    xaxis: {
+        type: 'category',
+        tickAmount: 8,
+        ...COMMON_AXIS_STYLES
+        },
+    grid: {
+        show: true,
+        borderColor: '#f1f5f9'
         }
     });

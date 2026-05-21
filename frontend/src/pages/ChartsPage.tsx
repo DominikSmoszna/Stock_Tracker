@@ -1,8 +1,8 @@
 import {useState, useEffect, useMemo} from 'react'
 import { motion } from 'framer-motion';
 import Chart from 'react-apexcharts';
-import {filterDataByRange, getBaseCandleOptions, getVolumeOptions} from '../utils/stockUtils/chartConfig';
-import {calculateSMA, calcBollingerBands} from '../utils/stockUtils/indicators';
+import {filterDataByRange, getBaseCandleOptions, getVolumeOptions, getRSIOptions} from '../utils/stockUtils/chartConfig';
+import {calculateSMA, calcBollingerBands, calculateEMA, calculateRSI} from '../utils/stockUtils/indicators';
 
 function ChartsPage() {
   const [symbol, setSymbol] = useState<string>('');
@@ -16,10 +16,8 @@ function ChartsPage() {
   const [showSMA, setShowSMA] = useState<boolean>(false);
   const [showEMA, setShowEMA] = useState<boolean>(false);
   const [showBollingerBands, setShowBollingerBands] = useState<boolean>(false);
-  const [showPBEMA, setShowPBEMA] = useState<boolean>(false);
   const [showRSI, setShowRSI] = useState<boolean>(false);
   const [showMACD, setShowMACD] = useState<boolean>(false);
-  const [showATR, setShowATR] = useState<boolean>(false);
 
   useEffect(() => {
         const fetchHistoryPrices = async (symbol: string) => {
@@ -39,7 +37,7 @@ function ChartsPage() {
   [data, timeRange]);
 
   const candleSeries = useMemo(() => [{
-      data: [...filteredData].reverse().map(d => ({
+      data: filteredData.map(d => ({
           x: d.date,
           y: [d.open, d.high, d.low, d.close]
           }))
@@ -48,7 +46,7 @@ function ChartsPage() {
   const volumeSeries = useMemo(() => [{
       name: 'Volume',
       type: 'bar',
-      data: [...filteredData].map(d => ({
+      data: filteredData.map(d => ({
           x: d.date,
           y: d.volume
           }))
@@ -61,8 +59,24 @@ function ChartsPage() {
 
   const smaData = useMemo(() => {
       if (!showSMA || filteredData.length === 0) return [];
-      return calculateSMA(filteredData, 20);
+      return calculateSMA(filteredData, 200);
       }, [filteredData, showSMA]);
+
+  const emaData = useMemo(() => {
+      if (!showEMA || filteredData.length === 0) return [];
+      return calculateEMA(filteredData, 20);
+      }, [filteredData, showEMA]);
+
+  const rsiData = useMemo(() => {
+      if (!showRSI || filteredData.length === 0) return [];
+      return calculateRSI(filteredData, 14);
+      }, [filteredData, showRSI]);
+
+  const rsiSeries = useMemo(() => [{
+      name: 'RSI',
+      type: 'line',
+      data: rsiData
+      }],[rsiData]);
 
   const mainChartSeries = useMemo(() => {
       const series: any[] = [{
@@ -78,7 +92,7 @@ function ChartsPage() {
                   series.push({
                       name: `BB ${key.toUpperCase()}`,
                       type: 'line',
-                      data: [...filteredData].map((d, idx) => ({
+                      data: filteredData.map((d, idx) => ({
                           x: d.date,
                           y: bbData[idx]?.[key as keyof typeof bbData[0]] ?? null
                           }))
@@ -88,19 +102,56 @@ function ChartsPage() {
           if(showSMA && smaData.length > 0){
               console.log("Dane SMA:", smaData);
                   series.push({
-                      name: 'SMA 50',
+                      name: 'SMA 200',
                       type: 'line',
-                      data: [...filteredData].map((d, idx) => ({
+                      data: filteredData.map((d, idx) => ({
                           x: d.date,
                           y: smaData[idx]?.y ?? null
                           }))
                       });
               }
+          if(showEMA && emaData.length > 0){
+                  series.push({
+                      name: 'EMA 20',
+                      type: 'line',
+                      data: filteredData.map((d,idx) => ({
+                          x: d.date,
+                          y: emaData[idx]?.y ?? null
+                          }))
+                      })
+              }
           return series;
-      }, [filteredData, bbData, showBollingerBands, smaData, showSMA]);
+      }, [filteredData, bbData, showBollingerBands, smaData, showSMA, emaData, showEMA, showVolume]);
 
-  const chartOptions = useMemo(() => getBaseCandleOptions(showVolume), [showVolume]);
-  const volumeOptions = useMemo(() => getVolumeOptions(), []);
+  const chartOptions = useMemo(() => ({
+      ...getBaseCandleOptions(showVolume),
+      chart: {
+          ...getBaseCandleOptions(showVolume).chart,
+          id: 'main-stock-chart'
+          }
+      }), [showVolume]);
+  const volumeOptions = useMemo(() => ({
+      ...getVolumeOptions(),
+      chart: {
+          ...getVolumeOptions().chart,
+          id: 'volume-chart-instance'
+          }
+      }), []);
+  const rsiOptions = useMemo(() => ({
+      ...getRSIOptions(),
+      chart: {
+          ...getRSIOptions().chart,
+          id: 'rsi-chart-instance'
+          }
+      }), []);
+
+  const indicatorConfigs = [
+      {label: 'Show Volume', state: showVolume, setter: setShowVolume},
+      {label: 'Show BB', state: showBollingerBands, setter: setShowBollingerBands},
+      {label: 'Show SMA', state: showSMA, setter: setShowSMA},
+      {label: 'Show EMA', state: showEMA, setter: setShowEMA},
+      {label: 'Show RSI', state: showRSI, setter: setShowRSI},
+      ];
 
   return (
     <div className="max-w-4xl mx-auto p-6 rounded-xl shadow-lg border border-slate-100">
@@ -141,40 +192,41 @@ function ChartsPage() {
                 </button>
                 {isMenuOpen && (<>
                     <div className="fixed inset-0 z-30" onClick={()=> setIsMenuOpen(false)}/>
-                    <div className="absolute left-0 sm:left-auto sm:right-0 lg:left-auto lg:right-0 mt-2 w-48 bg-white border border-slate rounded-xl shadow-xl z-40 p-2">
-                        <label className="flex justify-between px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
-                            <span className="ml-3 text-sm font-medium text-gray-900">Show Volume </span>
-                            <div className="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" className="sr-only peer" checked={showVolume} onChange={()=> setShowVolume(!showVolume)}/>
-                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </div>
-                        </label>
-                        <label className="flex justify-between px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
-                            <span className="ml-3 text-sm font-medium text-gray-900">Show BB</span>
-                            <div className="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" className="sr-only peer" checked={showBollingerBands} onChange={()=> setShowBollingerBands(!showBollingerBands)}/>
-                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </div>
-                        </label>
-                        <label className="flex justify-between px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
-                            <span className="ml-3 text-sm font-medium text-gray-900">Show SMA</span>
-                            <div className="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" className="sr-only peer" checked={showSMA} onChange={()=> setShowSMA(!showSMA)}/>
-                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </div>
-                        </label>
-                    </div>
+                    <div className="absolute right-0 mt-2 w-48 bg-white border border-slate rounded-xl shadow-xl z-40 p-2">
+                        {indicatorConfigs.map((config) => (
+                            <label key={config.label} className="flex justify-between px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
+                                <span className="ml-3 text-sm font-medium text-gray-900">{config.label}</span>
+                                <div className="relative inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        className="sr-only peer"
+                                        checked={config.state}
+                                        onChange={() => config.setter(!config.state)}
+                                    />
+                                    <div className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </div>
+                                </label>
+                            ))}
+                        </div>
                 </>)}
             </div>
         </div>
-        <div className="w-full p-4 bg-gray-50 rounded-xl border border-gray-200">
-            <Chart options={chartOptions} series={mainChartSeries} type="line" height={350} />
-        </div>
-        { showVolume &&
-        <div className="w-full p-4 bg-gray-50 rounded-b-xl border border-gray-200 -mt-4 relative z-0">
-            <Chart options={volumeOptions} series={volumeSeries} type="bar" height={80}/>
-        </div>
-        }
+            <div className="w-full p-4 bg-gray-50 rounded-t-xl border border-gray-200">
+                <Chart options={chartOptions} series={mainChartSeries} type="candlestick" height={350} />
+            </div>
+            <div className="w-full flex flex-col bg-gray-50 rounded-b-xl border-x border-b border-gray-200 p-4 pt-0 gap-2">
+                {showVolume && (
+                    <div className="w-full relative z-0 border-b border-gray-100 pb-2">
+                        <Chart options={volumeOptions} series={volumeSeries} type="bar" height={80}/>
+                    </div>
+                )}
+
+                {showRSI && (
+                    <div className="w-full relative z-0">
+                        <Chart options={rsiOptions} series={rsiSeries} type="line" height={150}/>
+                    </div>
+                )}
+            </div>
     </div>
   )
 }
