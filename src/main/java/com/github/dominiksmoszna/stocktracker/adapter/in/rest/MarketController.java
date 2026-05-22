@@ -6,10 +6,7 @@ import com.github.dominiksmoszna.stocktracker.domain.model.StockQuote;
 import com.github.dominiksmoszna.stocktracker.domain.port.in.GetMarketQuoteUseCase;
 import com.github.dominiksmoszna.stocktracker.domain.port.in.GetPriceHistoryUseCase;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -38,8 +35,13 @@ public class MarketController {
     }
 
     @GetMapping("/history/{symbol}")
-    public List<HistoricalPrice> getHistory(@PathVariable("symbol") String symbol) {
-        return getPriceHistoryUseCase.getPriceHistory(symbol);
+    public List<HistoricalPrice> getHistory(
+            @PathVariable("symbol") String symbol,
+            @RequestParam(defaultValue = "1d") String interval,
+            @RequestParam(defaultValue = "1y") String range
+    )
+    {
+        return getPriceHistoryUseCase.getPriceHistory(symbol, interval, range);
     }
 
 }

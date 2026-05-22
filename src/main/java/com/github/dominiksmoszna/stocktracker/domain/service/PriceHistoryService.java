@@ -13,7 +13,7 @@ public class PriceHistoryService implements GetPriceHistoryUseCase {
     private final GetPriceHistoryPort getPriceHistoryPort;
 
     @Override
-    public List<HistoricalPrice> getPriceHistory(String symbol) {
-        return getPriceHistoryPort.getPriceHistory(symbol);
+    public List<HistoricalPrice> getPriceHistory(String symbol, String interval, String range) {
+        return getPriceHistoryPort.getPriceHistory(symbol, interval, range);
     }
 }

@@ -5,5 +5,5 @@ import com.github.dominiksmoszna.stocktracker.domain.model.HistoricalPrice;
 import java.util.List;
 
 public interface GetPriceHistoryPort {
-    List<HistoricalPrice> getPriceHistory(String symbol);
+    List<HistoricalPrice> getPriceHistory(String symbol, String interval, String range);
 }

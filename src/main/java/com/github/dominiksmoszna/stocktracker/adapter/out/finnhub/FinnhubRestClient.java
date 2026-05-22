@@ -14,7 +14,7 @@ public class FinnhubRestClient implements MarketDataPort {
 
     private final RestClient restClient;
     private final String apiKey;
-    private static final String BASE_URL ="https://finnhub.io/api/v1";
+        private static final String BASE_URL ="https://finnhub.io/api/v1";
 
     public FinnhubRestClient(@Value("${finnhub.api.key}") String apiKey) {
         this.restClient = RestClient.create(BASE_URL);

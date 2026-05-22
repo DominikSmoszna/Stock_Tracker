@@ -10,9 +10,6 @@ public record HistoricalPrice(
         BigDecimal high,
         BigDecimal low,
         BigDecimal close,
-        long volume,
-        BigDecimal change,
-        BigDecimal changePercent,
-        BigDecimal vwap
+        long volume
 ) {
 }
