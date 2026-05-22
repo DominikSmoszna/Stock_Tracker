@@ -1,11 +1,5 @@
 export type TimeRange = '1M' | '3M' | '6M' | '1Y';
 
-export const filterDataByRange = (data: any[], range: TimeRange) => {
-    const now = new Date();
-    const months = range === '1M' ? 1 : range === '3M' ? 3 : range === '6M' ? 6 : 12;
-    const cutoff = new Date(now.setMonth(now.getMonth()-months));
-    return data.filter(d => new Date(d.date) >= cutoff);
-    };
 
 export const xAxisFormatter = (val: number | string) => {
     if (!val) return '';

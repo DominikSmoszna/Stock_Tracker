@@ -1,11 +1,19 @@
 import {useState, useEffect, useMemo} from 'react'
 import { motion } from 'framer-motion';
 import Chart from 'react-apexcharts';
-import {filterDataByRange, getBaseCandleOptions, getVolumeOptions, getRSIOptions} from '../utils/stockUtils/chartConfig';
+import {getBaseCandleOptions, getVolumeOptions, getRSIOptions} from '../utils/stockUtils/chartConfig';
 import {calculateSMA, calcBollingerBands, calculateEMA, calculateRSI} from '../utils/stockUtils/indicators';
+
+  const rangeMap: Record<'1M' | '3M' | '6M' | '1Y', string> = {
+        '1M' : '1mo',
+        '3M' : '3mo',
+        '6M' : '6mo',
+        '1Y' : '1y',
+      }
 
 function ChartsPage() {
   const [symbol, setSymbol] = useState<string>('');
+  const [interval, setInterval] = useState<string>('1d');
   const [inputValue, setInputValue] = useState<string>('')
   const [data, setData] = useState<HistoricalPrice[]>([]);
   const [loadingState, setLoadingState] = useState<boolean>(false);
@@ -23,54 +31,43 @@ function ChartsPage() {
         const fetchHistoryPrices = async (symbol: string) => {
             try{
                 setLoadingState(true);
-                const response = await fetch(`http://localhost:8080/api/market/history/${symbol}`);
+                const response = await fetch(`http://localhost:8080/api/market/history/${symbol}?interval=${interval}&range=${rangeMap[timeRange]}`);
                 if(!response.ok){throw new Error(`Error occurred during fetching symbol: ${symbol}`);}
                 const result = await response.json();
                 setData(result.sort((a: any, b:any)=> new Date(a.date).getTime() - new Date(b.date).getTime()));
             }catch (err) {setError(err instanceof Error ? err.message : 'Unexpected error occurred');} finally{setLoadingState(false)}
         };
         if(symbol){fetchHistoryPrices(symbol);}
-  },[symbol]);
-
-  const filteredData = useMemo(() =>
-    filterDataByRange(data, timeRange),
-  [data, timeRange]);
-
-  const candleSeries = useMemo(() => [{
-      data: filteredData.map(d => ({
-          x: d.date,
-          y: [d.open, d.high, d.low, d.close]
-          }))
-      }], [filteredData]);
+  },[symbol, interval, timeRange]);
 
   const volumeSeries = useMemo(() => [{
       name: 'Volume',
       type: 'bar',
-      data: filteredData.map(d => ({
+      data: data.map(d => ({
           x: d.date,
           y: d.volume
           }))
-      }], [filteredData]);
+      }], [data]);
 
   const bbData = useMemo(() => {
-      if (!showBollingerBands || filteredData.length === 0) return [];
-      return calcBollingerBands(filteredData, 20);
-      }, [filteredData, showBollingerBands]);
+      if (!showBollingerBands || data.length === 0) return [];
+      return calcBollingerBands(data, 20);
+      }, [data, showBollingerBands]);
 
   const smaData = useMemo(() => {
-      if (!showSMA || filteredData.length === 0) return [];
-      return calculateSMA(filteredData, 200);
-      }, [filteredData, showSMA]);
+      if (!showSMA || data.length === 0) return [];
+      return calculateSMA(data, 200);
+      }, [data, showSMA]);
 
   const emaData = useMemo(() => {
-      if (!showEMA || filteredData.length === 0) return [];
-      return calculateEMA(filteredData, 20);
-      }, [filteredData, showEMA]);
+      if (!showEMA || data.length === 0) return [];
+      return calculateEMA(data, 20);
+      }, [data, showEMA]);
 
   const rsiData = useMemo(() => {
-      if (!showRSI || filteredData.length === 0) return [];
-      return calculateRSI(filteredData, 14);
-      }, [filteredData, showRSI]);
+      if (!showRSI || data.length === 0) return [];
+      return calculateRSI(data, 14);
+      }, [data, showRSI]);
 
   const rsiSeries = useMemo(() => [{
       name: 'RSI',
@@ -82,7 +79,7 @@ function ChartsPage() {
       const series: any[] = [{
           name: 'Cena',
           type: 'candlestick',
-          data: filteredData.map(d => ({
+          data: data.map(d => ({
               x: d.date,
               y: [d.open, d.high, d.low, d.close]
               }))
@@ -92,7 +89,7 @@ function ChartsPage() {
                   series.push({
                       name: `BB ${key.toUpperCase()}`,
                       type: 'line',
-                      data: filteredData.map((d, idx) => ({
+                      data: data.map((d, idx) => ({
                           x: d.date,
                           y: bbData[idx]?.[key as keyof typeof bbData[0]] ?? null
                           }))
@@ -100,11 +97,10 @@ function ChartsPage() {
                   });
               }
           if(showSMA && smaData.length > 0){
-              console.log("Dane SMA:", smaData);
                   series.push({
                       name: 'SMA 200',
                       type: 'line',
-                      data: filteredData.map((d, idx) => ({
+                      data: data.map((d, idx) => ({
                           x: d.date,
                           y: smaData[idx]?.y ?? null
                           }))
@@ -114,14 +110,14 @@ function ChartsPage() {
                   series.push({
                       name: 'EMA 20',
                       type: 'line',
-                      data: filteredData.map((d,idx) => ({
+                      data: data.map((d,idx) => ({
                           x: d.date,
                           y: emaData[idx]?.y ?? null
                           }))
                       })
               }
           return series;
-      }, [filteredData, bbData, showBollingerBands, smaData, showSMA, emaData, showEMA, showVolume]);
+      }, [data, bbData, showBollingerBands, smaData, showSMA, emaData, showEMA]);
 
   const chartOptions = useMemo(() => ({
       ...getBaseCandleOptions(showVolume),
