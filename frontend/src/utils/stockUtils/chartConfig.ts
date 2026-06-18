@@ -1,17 +1,24 @@
-export type TimeRange = '1M' | '3M' | '6M' | '1Y';
-
-
 export const xAxisFormatter = (val: number | string) => {
     if (!val) return '';
     const d = new Date(val);
     if (isNaN(d.getTime())) return '';
+
+    const hasTime = typeof val === 'string' && (val.includes('T') || val.includes(':'));
+    if(hasTime){
+        return d.toLocaleDateString('pl-PL', {
+            day: '2-digit',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
     return d.toLocaleDateString('pl-PL', {day: '2-digit', month: 'short'});
     };
 
 const COMMON_AXIS_STYLES = {
     labels: {
         style: {colors: '#64748b', fontSize: '12px'},
-        formatter: (val: string | number) => xAxisFormatter(val)
+        formatter: (val: any) => val
         },
         axisTicks: {show: false},
         axisBorder: {show: false}

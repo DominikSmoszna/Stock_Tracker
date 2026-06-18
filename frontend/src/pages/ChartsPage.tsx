@@ -1,24 +1,17 @@
 import {useState, useEffect, useMemo} from 'react'
 import { motion } from 'framer-motion';
 import Chart from 'react-apexcharts';
-import {getBaseCandleOptions, getVolumeOptions, getRSIOptions} from '../utils/stockUtils/chartConfig';
+import {getBaseCandleOptions, getVolumeOptions, getRSIOptions, xAxisFormatter} from '../utils/stockUtils/chartConfig';
 import {calculateSMA, calcBollingerBands, calculateEMA, calculateRSI} from '../utils/stockUtils/indicators';
-
-  const rangeMap: Record<'1M' | '3M' | '6M' | '1Y', string> = {
-        '1M' : '1mo',
-        '3M' : '3mo',
-        '6M' : '6mo',
-        '1Y' : '1y',
-      }
 
 function ChartsPage() {
   const [symbol, setSymbol] = useState<string>('');
-  const [interval, setInterval] = useState<string>('1d');
+  const [timeInterval, setTimeInterval] = useState<'1m'|'2m'|'3m'|'5m'|'15m'|'30m'|'1h'|'4h'|'1d'|'1wk'|'1mo'|'3mo'>('1d');
   const [inputValue, setInputValue] = useState<string>('')
   const [data, setData] = useState<HistoricalPrice[]>([]);
   const [loadingState, setLoadingState] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [timeRange, setTimeRange] = useState<'1M' | '3M' | '6M' | '1Y'>('1M');
+  const [timeRange, setTimeRange] = useState<'1d'|'5d'|'1mo' | '3mo' | '6mo' | '1y' | '2y' | '5y' | '10y' | 'ytd' | 'max'>('1mo');
   const [showVolume, setShowVolume] = useState<boolean>(false);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [showSMA, setShowSMA] = useState<boolean>(false);
@@ -31,20 +24,20 @@ function ChartsPage() {
         const fetchHistoryPrices = async (symbol: string) => {
             try{
                 setLoadingState(true);
-                const response = await fetch(`http://localhost:8080/api/market/history/${symbol}?interval=${interval}&range=${rangeMap[timeRange]}`);
+                const response = await fetch(`http://localhost:8080/api/market/history/${symbol}?interval=${timeInterval}&range=${timeRange}`);
                 if(!response.ok){throw new Error(`Error occurred during fetching symbol: ${symbol}`);}
                 const result = await response.json();
                 setData(result.sort((a: any, b:any)=> new Date(a.date).getTime() - new Date(b.date).getTime()));
             }catch (err) {setError(err instanceof Error ? err.message : 'Unexpected error occurred');} finally{setLoadingState(false)}
         };
         if(symbol){fetchHistoryPrices(symbol);}
-  },[symbol, interval, timeRange]);
+  },[symbol, timeInterval, timeRange]);
 
   const volumeSeries = useMemo(() => [{
       name: 'Volume',
       type: 'bar',
       data: data.map(d => ({
-          x: d.date,
+          x: xAxisFormatter(d.date),
           y: d.volume
           }))
       }], [data]);
@@ -72,15 +65,18 @@ function ChartsPage() {
   const rsiSeries = useMemo(() => [{
       name: 'RSI',
       type: 'line',
-      data: rsiData
-      }],[rsiData]);
+      data: data.map((d, idx)=>({
+        x: xAxisFormatter(d.date),
+        y: rsiData[idx] ?? null
+      }))
+      }],[data, rsiData]);
 
   const mainChartSeries = useMemo(() => {
       const series: any[] = [{
           name: 'Cena',
           type: 'candlestick',
           data: data.map(d => ({
-              x: d.date,
+              x: xAxisFormatter(d.date),
               y: [d.open, d.high, d.low, d.close]
               }))
           }];
@@ -90,7 +86,7 @@ function ChartsPage() {
                       name: `BB ${key.toUpperCase()}`,
                       type: 'line',
                       data: data.map((d, idx) => ({
-                          x: d.date,
+                          x: xAxisFormatter(d.date),
                           y: bbData[idx]?.[key as keyof typeof bbData[0]] ?? null
                           }))
                       });
@@ -101,8 +97,8 @@ function ChartsPage() {
                       name: 'SMA 200',
                       type: 'line',
                       data: data.map((d, idx) => ({
-                          x: d.date,
-                          y: smaData[idx]?.y ?? null
+                          x: xAxisFormatter(d.date),
+                          y: smaData[idx] ?? null
                           }))
                       });
               }
@@ -111,35 +107,44 @@ function ChartsPage() {
                       name: 'EMA 20',
                       type: 'line',
                       data: data.map((d,idx) => ({
-                          x: d.date,
-                          y: emaData[idx]?.y ?? null
+                          x: xAxisFormatter(d.date),
+                          y: emaData[idx] ?? null
                           }))
                       })
               }
           return series;
       }, [data, bbData, showBollingerBands, smaData, showSMA, emaData, showEMA]);
 
-  const chartOptions = useMemo(() => ({
-      ...getBaseCandleOptions(showVolume),
-      chart: {
-          ...getBaseCandleOptions(showVolume).chart,
-          id: 'main-stock-chart'
-          }
-      }), [showVolume]);
-  const volumeOptions = useMemo(() => ({
-      ...getVolumeOptions(),
-      chart: {
-          ...getVolumeOptions().chart,
-          id: 'volume-chart-instance'
-          }
-      }), []);
-  const rsiOptions = useMemo(() => ({
-      ...getRSIOptions(),
-      chart: {
-          ...getRSIOptions().chart,
-          id: 'rsi-chart-instance'
-          }
-      }), []);
+  const chartOptions = useMemo(() => {
+      const base = getBaseCandleOptions();
+      return {
+        ...base,
+        chart: {
+            ...base.chart,
+            id: `main-chart-${symbol}-${timeInterval}-${timeRange}-${data.length}`
+        }
+      };
+      }, [symbol, timeInterval, timeRange, data.length]);
+  const volumeOptions = useMemo(() => {
+      const base = getVolumeOptions();
+      return {
+        ...base,
+        chart: {
+            ...base.chart,
+            id: `volume-chart-${symbol}-${timeInterval}-${timeRange}-${data.length}`
+        }
+      };
+      }, [symbol, timeInterval, timeRange, data.length]);
+  const rsiOptions = useMemo(() => {
+      const base = getRSIOptions();
+      return {
+        ...base,
+        chart: {
+            ...base.chart,
+            id: `rsi-chart-${symbol}-${timeInterval}-${timeRange}-${data.length}`
+        }
+      };
+      }, [symbol, timeInterval, timeRange, data.length]);
 
   const indicatorConfigs = [
       {label: 'Show Volume', state: showVolume, setter: setShowVolume},
@@ -148,7 +153,6 @@ function ChartsPage() {
       {label: 'Show EMA', state: showEMA, setter: setShowEMA},
       {label: 'Show RSI', state: showRSI, setter: setShowRSI},
       ];
-
   return (
     <div className="max-w-4xl mx-auto p-6 rounded-xl shadow-lg border border-slate-100">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
@@ -162,22 +166,39 @@ function ChartsPage() {
             </div>
         </div>
         <div className="flex flex-col sm:flex-row justify-between gap-4 mb-8">
-            <div className="flex items-center gap-1 mb-6 bg-slate-100 p-1 rounded-xl w-fit">
-                {(['1M','3M','6M','1Y'] as const).map(range => (
-                    <button key={range} onClick={()=>setTimeRange(range)}
-                        className={`relative px-4 py-1.5 rounded-lg text-sm font-semibold transition-all
-                            ${timeRange === range ? ' text-blue-800 hover:text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
-                    <span className="relative z-20">{range}</span>
-                    {timeRange === range && (
-                        <motion.div
-                            layoutId="activeTab"
-                            className="absolute inset-0 bg-white rounded-lg shadow-sm z-10"
-                            transition={{type: "spring", bounce: 0.2, duration: 0.6}}
-                        />
+            <div className="flex flex-col justify-between gap-4">
+                <div className="flex items-center gap-1 mb-6 bg-slate-100 p-1 rounded-xl w-fit">
+                    {(['1d','5d','1mo','3mo','6mo','1y', '2y', '5y', '10y', 'ytd', 'max'] as const).map(range => (
+                        <button key={range} onClick={()=>setTimeRange(range)}
+                            className={`relative px-4 py-1.5 rounded-lg text-sm font-semibold transition-all
+                            ${timeRange === range ? ' text-blue-800 hover:text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                        <span className="relative z-20">{range}</span>
+                        {timeRange === range && (
+                            <motion.div
+                                layoutId="rangeTab"
+                                className="absolute inset-0 bg-white rounded-lg shadow-sm z-10"
+                                transition={{type: "spring", bounce: 0.2, duration: 0.6}}
+                            />
+                            )}
+                        </button>
+                    ))}
+                </div>
+                <div className="flex items-center gap-1 mb-6 bg-slate-100 p-1 rounded-xl w-fit">
+                    {(['1m','2m','3m','5m','15m','30m','1h','4h','1d','1wk','1mo','3mo'] as const).map(interval => (
+                        <button key={interval} onClick={()=>setTimeInterval(interval)}
+                            className={`relative px-4 py-1.5 rounded-lg text-sm font-semibold transition-all
+                            ${timeInterval === interval ? ' text-blue-800 hover:text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                        <span className="relative z-20">{interval}</span>
+                        {timeInterval === interval && (
+                            <motion.div
+                                layoutId="intervalTab"
+                                className="absolute inset-0 bg-white rounded-lg shadow-sm z-10"
+                                transition={{type: "spring", bounce: 0.2, duration: 0.6}}
+                            />
                         )}
-                    </button>
-                ))}
+                        </button>
+                    ))}
+                </div>
             </div>
             <div className="relative">
                 <button onClick={()=> setIsMenuOpen(!isMenuOpen)} className="flex items-center gap-2 px-4 py-1.5 bg-white border border-slate rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
@@ -207,19 +228,20 @@ function ChartsPage() {
                 </>)}
             </div>
         </div>
+            <div>{data.length} punktów danych</div>
             <div className="w-full p-4 bg-gray-50 rounded-t-xl border border-gray-200">
-                <Chart options={chartOptions} series={mainChartSeries} type="candlestick" height={350} />
+                <Chart key={`${symbol}-${timeInterval}-${timeRange}-${data.length}`}  options={chartOptions} series={mainChartSeries} type="candlestick" height={350} />
             </div>
             <div className="w-full flex flex-col bg-gray-50 rounded-b-xl border-x border-b border-gray-200 p-4 pt-0 gap-2">
                 {showVolume && (
                     <div className="w-full relative z-0 border-b border-gray-100 pb-2">
-                        <Chart options={volumeOptions} series={volumeSeries} type="bar" height={80}/>
+                        <Chart key={`vol-${symbol}-${timeInterval}`} options={volumeOptions} series={volumeSeries} type="bar" height={80}/>
                     </div>
                 )}
 
                 {showRSI && (
                     <div className="w-full relative z-0">
-                        <Chart options={rsiOptions} series={rsiSeries} type="line" height={150}/>
+                        <Chart key={`rsi-${symbol}-${timeInterval}`} options={rsiOptions} series={rsiSeries} type="line" height={150}/>
                     </div>
                 )}
             </div>

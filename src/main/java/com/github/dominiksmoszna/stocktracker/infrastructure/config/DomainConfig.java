@@ -59,14 +59,4 @@ public class DomainConfig {
                 marketDataPort
         );
     }
-
-    @Bean
-    public PriceHistoryService priceHistoryService(
-            GetPriceHistoryPort priceHistoryPort
-    ){
-        return new PriceHistoryService(
-                priceHistoryPort
-        );
-    }
-
 }
