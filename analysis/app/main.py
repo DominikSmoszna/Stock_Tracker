@@ -1,7 +1,13 @@
 from fastapi import FastAPI
+from app.routers import charts
 
-app = FastAPI()
+app = FastAPI(
+    title="Chart API",
+    version="1.0",
+)
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+app.include_router(charts.router, prefix="/api")
+
+@app.get("/")
+async def root():
+    return {"message": "Is working"}
