@@ -1,4 +1,5 @@
 import {useState, useEffect} from 'react'
+import {MarketQuote} from "../types/market.ts";
 
 const INDICES = ['SPY', 'QQQ', 'DIA', 'IWM','ACWI', 'GLD', 'SLV', 'USO']
 
@@ -58,6 +59,6 @@ function MarketIndices() {
                 ))}
             </div>
         );
-};
+}
 
 export default MarketIndices

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import {Market} from "../types/market.ts";
 
 const MARKET_DATA = [
     {
@@ -37,7 +38,6 @@ const MARKET_DATA = [
         closeHour: 16,
         closeMinute: 0,
     }
-
 ]
 
 function MarketHours() {
@@ -48,7 +48,7 @@ function MarketHours() {
             return () => clearInterval(timer);
         },[]);
 
-    const getMarketStatus = (market) =>  {
+    const getMarketStatus = (market:Market):boolean =>  {
 
             const formatter = Intl.DateTimeFormat("en-US", {
                 timeZone: market.timezone,
@@ -59,7 +59,7 @@ function MarketHours() {
                 });
 
             const parts = formatter.formatToParts(currentTime);
-            const getPart = (type) => parts.find((p) => p.type === type).value
+            const getPart = (type:string) => parts.find((p) => p.type === type)?.value ?? ''
 
             const localHour = parseInt(getPart("hour"));
             const localMinute = parseInt(getPart("minute"));
@@ -93,7 +93,7 @@ function MarketHours() {
                         weekday: "short"
                         });
                     const parts = formatter.formatToParts(currentTime);
-                    const getPart = (type) => parts.find((p) => p.type === type).value
+                    const getPart = (type:string) => parts.find((p) => p.type === type)?.value ?? ''
                     const h = parseInt(getPart("hour"));
                     const m = parseInt(getPart("minute"));
                     const localDay = getPart("weekday");

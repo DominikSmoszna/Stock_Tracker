@@ -3,6 +3,7 @@ import {Client} from '@stomp/stompjs'
 import SockJS from 'sockjs-client'
 import MarketHours from '../components/MarketHours'
 import MarketIndices from '../components/MarketIndices'
+import {StockPrice} from "../types/market.ts";
 
 function HomePage() {
     const [prices, setPrices] = useState<Record<string, StockPrice>>({})
@@ -21,7 +22,7 @@ function HomePage() {
                 }
             })
             client.activate()
-            return () => client.deactivate()
+            return () => { client.deactivate() }
         }, [])
 
   return (

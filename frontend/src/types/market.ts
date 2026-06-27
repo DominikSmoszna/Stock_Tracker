@@ -24,7 +24,14 @@ export interface HistoricalPrice {
     low: number
     close: number
     volume: number
-    change: number
-    changePercent: number
-    vwap: number
     }
+
+export interface Market {
+    id: string
+    name: string
+    timezone: string
+    openHour: number
+    openMinute: number
+    closeHour: number
+    closeMinute: number
+}
