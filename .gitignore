@@ -32,5 +32,16 @@ build/
 ### VS Code ###
 .vscode/
 
-application-local.properties
+.env
 frontend/node_modules/
+
+### DOCKER & POSTGRES ###
+postgres_data/
+.docker_data/
+
+### PYTHON ###
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/

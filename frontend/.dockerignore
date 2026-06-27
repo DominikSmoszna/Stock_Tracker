@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.dockerignore
+Dockerfile
+
+.eslintcache
+.npm/
+npm-debug.log
