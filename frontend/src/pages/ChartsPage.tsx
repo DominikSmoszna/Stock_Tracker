@@ -2,6 +2,27 @@ import React, {useEffect, useRef, useState} from "react";
 import {createChart, CandlestickSeries} from "lightweight-charts";
 import {CandleData} from "../types/market.ts";
 
+const INTERVAL_RANGE_MAP: Record<string, string[]> = {
+    '1m':  ['1d','5d'],
+    '5m':  ['1d','5d', '1mo'],
+    '15m': ['1d','5d', '1mo'],
+    '30m': ['1d','5d', '1mo','3mo'],
+    '1h':  ['5d', '1mo', '3mo', '6mo'],
+    '4h':  ['1mo', '3mo', '6mo', '1y'],
+    '1d':  ['1mo', '3mo', '6mo', '1y', 'max'],
+    '1wk': ['3mo', '6mo', '1y', 'max'],
+}
+
+const RANGE_LABELS: Record<string, string> = {
+    '1d': '1 day',
+    '5d': '5 days',
+    '1mo': '1 month',
+    '3mo': '3 months',
+    '6mo': '6 months',
+    '1y': '1 year',
+    'max': 'Max'
+}
+
 function ChartsPage() {
     const [symbol, setSymbol] = useState<string>('NOW');
     const [searchQuery, setSearchQuery] = useState<string>('NOW');
@@ -76,6 +97,12 @@ function ChartsPage() {
         }
     };
 
+    const handleIntervalChange = (newInterval: string) => {
+        setInterval(newInterval);
+        const availableRanges = INTERVAL_RANGE_MAP[newInterval] ?? ['1mo']
+        setRange(availableRanges[0])
+    }
+
     return (
         <div className="p-6 max-w-7xl mx-auto font-sans">
             <h1 className="text-3xl font-bold text-gray-800 mb-6">Charts Page</h1>
@@ -93,13 +120,15 @@ function ChartsPage() {
 
                 <select
                     value={interval}
-                    onChange={(e) => setInterval(e.target.value)}
+                    onChange={(e) => handleIntervalChange(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                    <option value="1m">1 min</option>
-                    <option value="5m">5 min</option>
-                    <option value="15m">15 min</option>
+                    <option value="1m">1 minute</option>
+                    <option value="5m">5 minutes</option>
+                    <option value="15m">15 minutes</option>
+                    <option value="30m">30 minutes</option>
                     <option value="1h">1 hour</option>
+                    <option value="4h">4 hours</option>
                     <option value="1d">1 day</option>
                     <option value="1wk">1 week</option>
                 </select>
@@ -109,13 +138,11 @@ function ChartsPage() {
                     onChange={(e) => setRange(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                    <option value="1d">1 day</option>
-                    <option value="5d">5 days</option>
-                    <option value="1mo">1 month</option>
-                    <option value="3mo">3 months</option>
-                    <option value="6mo">6 months</option>
-                    <option value="1y">1 year</option>
-                    <option value="max">max</option>
+                    {(INTERVAL_RANGE_MAP[interval] ?? ['1mo', '3mo', '6mo', '1y', 'max']).map(r => (
+                        <option key={r} value={r}>
+                            {RANGE_LABELS[r] ?? r}
+                        </option>
+                    ))}
                 </select>
 
                 <button
