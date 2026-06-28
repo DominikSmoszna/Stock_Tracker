@@ -24,7 +24,7 @@ async def get_chart_data(
             if interval in ['1d', '5d', '1wk', '1mo', '3mo']:
                 df[date_col] = df[date_col].dt.strftime('%Y-%m-%d')
             else:
-                df[date_col] = df[date_col].dt.strftime('%Y-%m-%d %H:%M:%S')
+                df[date_col] = df[date_col].dt.tz_convert('UTC').astype('int64')
 
         df =df.rename(columns={
             date_col: 'time',
@@ -40,6 +40,8 @@ async def get_chart_data(
 
         df = df.replace({np.nan: None, np.inf: None, -np.inf: None})
 
+        df = df.drop_duplicates(subset=['time'])
+        df = df.sort_values('time')
         chart_data = df.to_dict('records')
 
         return chart_data

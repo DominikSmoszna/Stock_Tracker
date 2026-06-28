@@ -16,16 +16,6 @@ export interface MarketQuote {
     timestamp: number
     }
 
-export interface HistoricalPrice {
-    ticker: string
-    date: string
-    open: number
-    high: number
-    low: number
-    close: number
-    volume: number
-    }
-
 export interface Market {
     id: string
     name: string
@@ -34,4 +24,13 @@ export interface Market {
     openMinute: number
     closeHour: number
     closeMinute: number
+}
+
+export interface CandleData {
+    time: string
+    open: number
+    high: number
+    low: number
+    close: number
+    volume: number
 }
