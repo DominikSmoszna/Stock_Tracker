@@ -9,9 +9,15 @@ async def get_chart_data(
         symbol: str,
         interval: str = Query(default="1d", description="Data interval"),
         period: str = Query(default="1mo", alias="range", description="Period"),
+        start: str = Query(default=None, description="Start date"),
+        end: str = Query(default=None, description="End date"),
     ):
         ticker = yf.Ticker(symbol)
-        df = ticker.history(period=period, interval=interval)
+
+        if start:
+            df = ticker.history(start=start,end=end, interval=interval)
+        else:
+            df = ticker.history(period=period, interval=interval)
 
         if df.empty:
             return []

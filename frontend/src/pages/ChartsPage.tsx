@@ -29,11 +29,70 @@ function ChartsPage() {
     const [interval, setInterval] = useState<string>('1d');
     const [range, setRange] = useState<string>('1mo');
 
-    const [data, setData] = useState<CandleData[]>([])
+    const [, setData] = useState<CandleData[]>([])
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
 
     const chartContainerRef = useRef<HTMLDivElement>(null);
+    const chartRef = useRef<any>(null)
+    const candleSeriesRef = useRef<any>(null)
+    const oldestTimeRef = useRef<string | number | null>(null)
+    const isLoadingMoreRef = useRef<boolean>(false);
+    const currentDataRef = useRef<CandleData[]>([])
+
+    const loadMoreData = async () => {
+        if ( isLoadingMoreRef.current || !oldestTimeRef.current ) return;
+        isLoadingMoreRef.current = true;
+
+        try {
+            const currentOldestDate = new Date(oldestTimeRef.current);
+            const startDate = new Date(currentOldestDate);
+            startDate.setMonth(startDate.getMonth() - 3);
+
+            const startParam = startDate.toISOString().split('T')[0];
+            const endParam = oldestTimeRef.current;
+
+            const response = await fetch(
+                `http://localhost:8000/api/chart/${searchQuery}?interval=${interval}&start=${startParam}&end=${endParam}`
+            );
+
+            if (!response.ok) throw new Error();
+
+            const newData: CandleData[] = await response.json();
+            const oldestTime = oldestTimeRef.current;
+
+            if (newData.length > 0) {
+                const filteredNewData = newData.filter(
+                    (item) => item.time < oldestTime
+                );
+
+                if (filteredNewData.length > 0) {
+                    const mergedData = [...filteredNewData, ...currentDataRef.current];
+
+                    currentDataRef.current = mergedData;
+                    oldestTimeRef.current = mergedData[0].time;
+                    setData(mergedData);
+
+                    const timeScale = chartRef.current.timeScale();
+                    const logicalRange = timeScale.getVisibleLogicalRange();
+
+                    candleSeriesRef.current.setData(mergedData);
+
+                    if (logicalRange) {
+                        const addedBarssCount = filteredNewData.length;
+                        timeScale.setVisibleLogicalRange({
+                            from: logicalRange.from + addedBarssCount,
+                            to: logicalRange.to + addedBarssCount
+                        });
+                    }
+                }
+            }
+        }catch(err) {
+            console.error("Error during fetching data", err);
+        } finally {
+            isLoadingMoreRef.current = false;
+        }
+    };
 
     useEffect(() => {
         const fetchChartData = async () => {
@@ -46,11 +105,26 @@ function ChartsPage() {
                 if (!response.ok){
                     throw new Error('Error fetching chart data');
                 }
-                const jsonData = await response.json();
+                const jsonData: CandleData[] = await response.json();
                 setData(jsonData);
+                currentDataRef.current = jsonData;
+
+                if (jsonData.length > 0) {
+                    oldestTimeRef.current = jsonData[0].time;
+                    if (candleSeriesRef.current) {
+                        candleSeriesRef.current.setData(jsonData);
+                        chartRef.current.timeScale().fitContent();
+                    }
+                } else {
+                    oldestTimeRef.current = null;
+                    if (candleSeriesRef.current) candleSeriesRef.current.setData([]);
+                }
             } catch (err: any) {
                 setError(err.message || 'Something went wrong');
                 setData([]);
+                currentDataRef.current = [];
+                oldestTimeRef.current = null;
+                if (candleSeriesRef.current) candleSeriesRef.current.setData([]);
             } finally {
                 setLoading(false);
             }
@@ -60,7 +134,7 @@ function ChartsPage() {
     }, [searchQuery,interval, range]);
 
     useEffect(() => {
-        if (!chartContainerRef.current || data.length === 0) return;
+        if (!chartContainerRef.current) return;
 
        const chart = createChart(chartContainerRef.current, {
            width: chartContainerRef.current.clientWidth,
@@ -83,12 +157,32 @@ function ChartsPage() {
            wickDownColor: '#ef5350',
        });
 
-       candleSeries.setData(data);
-       chart.timeScale().fitContent();
-       return () => {
-           chart.remove();
+       chartRef.current = chart;
+       candleSeriesRef.current = candleSeries;
+
+       chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
+           if (range && range.from < 2) {
+               loadMoreData();
+           }
+       });
+
+       const handleResize = () => {
+           if (chartContainerRef.current && chartRef.current) {
+               chartRef.current.applyOptions({
+                   width: chartContainerRef.current.clientWidth,
+               });
+           }
        };
-    }, [data]);
+
+       window.addEventListener('resize', handleResize);
+
+       return () => {
+           window.removeEventListener('resize', handleResize);
+           chart.remove();
+           chartRef.current = null;
+           candleSeriesRef.current = null;
+       };
+    }, []);
 
     const handleSearch = (e: React.SyntheticEvent) => {
         e.preventDefault();
@@ -106,7 +200,6 @@ function ChartsPage() {
     return (
         <div className="p-6 max-w-7xl mx-auto font-sans">
             <h1 className="text-3xl font-bold text-gray-800 mb-6">Charts Page</h1>
-
             <form onSubmit={handleSearch} className="mb-6 flex flex-wrap gap-4 items-center bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm">
                 <div className="relative">
                     <input
@@ -117,7 +210,6 @@ function ChartsPage() {
                         className="px-4 py-2 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase font-semibold w-48 bg-white"
                     />
                 </div>
-
                 <select
                     value={interval}
                     onChange={(e) => handleIntervalChange(e.target.value)}
@@ -132,7 +224,6 @@ function ChartsPage() {
                     <option value="1d">1 day</option>
                     <option value="1wk">1 week</option>
                 </select>
-
                 <select
                     value={range}
                     onChange={(e) => setRange(e.target.value)}
@@ -144,7 +235,6 @@ function ChartsPage() {
                         </option>
                     ))}
                 </select>
-
                 <button
                     type="submit"
                     className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors duration-150 cursor-pointer"
@@ -152,13 +242,11 @@ function ChartsPage() {
                     Szukaj
                 </button>
             </form>
-
             {loading && (
                 <div className="flex items-center gap-2 text-gray-600 mb-4 animate-pulse">
                     <span>Ładowanie danych z rynku...</span>
                 </div>
             )}
-
             {error && (
                 <div className="p-4 mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
                     <strong>Błąd:</strong> {error}
