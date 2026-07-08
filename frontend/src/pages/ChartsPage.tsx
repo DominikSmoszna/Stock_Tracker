@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from "react";
 import {createChart, CandlestickSeries} from "lightweight-charts";
-import {CandleData} from "../types/market.ts";
+import {ChartResponse, CandleData} from "../types/market.ts";
 
 const INTERVAL_RANGE_MAP: Record<string, string[]> = {
     '1m':  ['1d','5d'],
@@ -13,6 +13,17 @@ const INTERVAL_RANGE_MAP: Record<string, string[]> = {
     '1wk': ['3mo', '6mo', '1y', 'max'],
 }
 
+const INTERVAL_OFFSET_MAP: Record<string, number> = {
+    '1m': 3,
+    '5m': 15,
+    '15m': 15,
+    '30m': 15,
+    '1h': 60,
+    '4h': 60,
+    '1d': 90,
+    '1wk': 365,
+}
+
 const RANGE_LABELS: Record<string, string> = {
     '1d': '1 day',
     '5d': '5 days',
@@ -23,13 +34,26 @@ const RANGE_LABELS: Record<string, string> = {
     'max': 'Max'
 }
 
+const toDate = (time: string | number | null): Date => {
+    if (!time) return new Date();
+    if (typeof time === "number") {
+        return new Date(time*1000);
+    }
+    return new Date(time);
+}
+
+const toDateString = (time: string | number| Date): string => {
+    if (time instanceof Date) return time.toISOString().split('T')[0];
+    if (typeof time === "string") return time;
+    return new Date(time*1000).toISOString().split('T')[0];
+}
+
 function ChartsPage() {
     const [symbol, setSymbol] = useState<string>('NOW');
     const [searchQuery, setSearchQuery] = useState<string>('NOW');
     const [interval, setInterval] = useState<string>('1d');
     const [range, setRange] = useState<string>('1mo');
 
-    const [, setData] = useState<CandleData[]>([])
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -39,53 +63,60 @@ function ChartsPage() {
     const oldestTimeRef = useRef<string | number | null>(null)
     const isLoadingMoreRef = useRef<boolean>(false);
     const currentDataRef = useRef<CandleData[]>([])
+    const currentSymbolRef = useRef<string>(searchQuery);
+    const currentIntervalRef = useRef<string>(interval);
+    const hasMoreDataRef = useRef<boolean>(true);
 
     const loadMoreData = async () => {
-        if ( isLoadingMoreRef.current || !oldestTimeRef.current ) return;
+        if ( isLoadingMoreRef.current || !oldestTimeRef.current || !hasMoreDataRef.current ) return;
         isLoadingMoreRef.current = true;
 
         try {
-            const currentOldestDate = new Date(oldestTimeRef.current);
+            const currentOldestDate = toDate(oldestTimeRef.current);
             const startDate = new Date(currentOldestDate);
-            startDate.setMonth(startDate.getMonth() - 3);
 
-            const startParam = startDate.toISOString().split('T')[0];
-            const endParam = oldestTimeRef.current;
+            const daysToSubtract = INTERVAL_OFFSET_MAP[currentIntervalRef.current] ?? 30;
+            startDate.setDate(startDate.getDate() - daysToSubtract);
+
+            const startParam = toDateString(startDate);
+            const endParam = toDateString(oldestTimeRef.current);
 
             const response = await fetch(
-                `http://localhost:8000/api/chart/${searchQuery}?interval=${interval}&start=${startParam}&end=${endParam}`
+                `http://localhost:8000/api/chart/${currentSymbolRef.current}?interval=${currentIntervalRef.current}&start=${startParam}&end=${endParam}`
             );
 
             if (!response.ok) throw new Error();
 
-            const newData: CandleData[] = await response.json();
+            const newData: ChartResponse = await response.json();
             const oldestTime = oldestTimeRef.current;
 
-            if (newData.length > 0) {
-                const filteredNewData = newData.filter(
-                    (item) => item.time < oldestTime
-                );
+            if (!newData.candles || newData.candles.length === 0) {
+                hasMoreDataRef.current = false;
+                return;
+            }
 
-                if (filteredNewData.length > 0) {
-                    const mergedData = [...filteredNewData, ...currentDataRef.current];
+            const filteredNewData = newData.candles.filter(
+                (item) => item.time < oldestTime
+            );
 
-                    currentDataRef.current = mergedData;
-                    oldestTimeRef.current = mergedData[0].time;
-                    setData(mergedData);
+            if (filteredNewData.length === 0) {
+                hasMoreDataRef.current = false;
+                return;
+            }
 
-                    const timeScale = chartRef.current.timeScale();
-                    const logicalRange = timeScale.getVisibleLogicalRange();
+            const mergedData = [...filteredNewData, ...currentDataRef.current];
 
-                    candleSeriesRef.current.setData(mergedData);
-
-                    if (logicalRange) {
-                        const addedBarssCount = filteredNewData.length;
-                        timeScale.setVisibleLogicalRange({
-                            from: logicalRange.from + addedBarssCount,
-                            to: logicalRange.to + addedBarssCount
-                        });
-                    }
-                }
+            currentDataRef.current = mergedData;
+            oldestTimeRef.current = mergedData[0].time;
+            const timeScale = chartRef.current.timeScale();
+            const logicalRange = timeScale.getVisibleLogicalRange();
+            candleSeriesRef.current.setData(mergedData);
+            if (logicalRange) {
+                const addedBarsCount = filteredNewData.length;
+                timeScale.setVisibleLogicalRange({
+                    from: logicalRange.from + addedBarsCount,
+                    to: logicalRange.to + addedBarsCount
+                });
             }
         }catch(err) {
             console.error("Error during fetching data", err);
@@ -95,6 +126,9 @@ function ChartsPage() {
     };
 
     useEffect(() => {
+        currentSymbolRef.current = searchQuery;
+        currentIntervalRef.current = interval;
+        hasMoreDataRef.current = true;
         const fetchChartData = async () => {
             setLoading(true);
             setError(null);
@@ -105,14 +139,13 @@ function ChartsPage() {
                 if (!response.ok){
                     throw new Error('Error fetching chart data');
                 }
-                const jsonData: CandleData[] = await response.json();
-                setData(jsonData);
-                currentDataRef.current = jsonData;
+                const jsonData: ChartResponse = await response.json();
+                currentDataRef.current = jsonData.candles;
 
-                if (jsonData.length > 0) {
-                    oldestTimeRef.current = jsonData[0].time;
+                if (jsonData.candles.length > 0) {
+                    oldestTimeRef.current = jsonData.candles[0].time;
                     if (candleSeriesRef.current) {
-                        candleSeriesRef.current.setData(jsonData);
+                        candleSeriesRef.current.setData(jsonData.candles);
                         chartRef.current.timeScale().fitContent();
                     }
                 } else {
@@ -121,7 +154,6 @@ function ChartsPage() {
                 }
             } catch (err: any) {
                 setError(err.message || 'Something went wrong');
-                setData([]);
                 currentDataRef.current = [];
                 oldestTimeRef.current = null;
                 if (candleSeriesRef.current) candleSeriesRef.current.setData([]);
@@ -131,7 +163,7 @@ function ChartsPage() {
         };
 
         fetchChartData();
-    }, [searchQuery,interval, range]);
+    }, [searchQuery,interval, range, ]);
 
     useEffect(() => {
         if (!chartContainerRef.current) return;

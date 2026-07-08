@@ -1,3 +1,5 @@
+import {LineData} from "lightweight-charts";
+
 export interface StockPrice {
     ticker: string
     price: number
@@ -33,4 +35,18 @@ export interface CandleData {
     low: number
     close: number
     volume: number
+}
+
+export interface BollingerData {
+    upper: LineData[]
+    middle: LineData[]
+    lower: LineData[]
+}
+
+export interface ChartResponse {
+    candles: CandleData[]
+    sma?: LineData[]
+    ema?: LineData[]
+    rsi?: LineData[]
+    bb?: BollingerData[]
 }
