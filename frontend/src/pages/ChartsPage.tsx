@@ -1,65 +1,17 @@
 import React, {useEffect, useRef, useState} from "react";
-import {createChart, CandlestickSeries} from "lightweight-charts";
 import {ChartResponse, CandleData} from "../types/market.ts";
-
-const INTERVAL_RANGE_MAP: Record<string, string[]> = {
-    '1m':  ['1d','5d'],
-    '5m':  ['1d','5d', '1mo'],
-    '15m': ['1d','5d', '1mo'],
-    '30m': ['1d','5d', '1mo','3mo'],
-    '1h':  ['5d', '1mo', '3mo', '6mo'],
-    '4h':  ['1mo', '3mo', '6mo', '1y'],
-    '1d':  ['1mo', '3mo', '6mo', '1y', 'max'],
-    '1wk': ['3mo', '6mo', '1y', 'max'],
-}
-
-const INTERVAL_OFFSET_MAP: Record<string, number> = {
-    '1m': 3,
-    '5m': 15,
-    '15m': 15,
-    '30m': 15,
-    '1h': 60,
-    '4h': 60,
-    '1d': 90,
-    '1wk': 365,
-}
-
-const RANGE_LABELS: Record<string, string> = {
-    '1d': '1 day',
-    '5d': '5 days',
-    '1mo': '1 month',
-    '3mo': '3 months',
-    '6mo': '6 months',
-    '1y': '1 year',
-    'max': 'Max'
-}
-
-const toDate = (time: string | number | null): Date => {
-    if (!time) return new Date();
-    if (typeof time === "number") {
-        return new Date(time*1000);
-    }
-    return new Date(time);
-}
-
-const toDateString = (time: string | number| Date): string => {
-    if (time instanceof Date) return time.toISOString().split('T')[0];
-    if (typeof time === "string") return time;
-    return new Date(time*1000).toISOString().split('T')[0];
-}
+import {INTERVAL_DEFAULT_RANGE, INTERVAL_OFFSET_MAP, toDate, toDateString} from "../utils/chartHelpers.ts"
+import CandleStickChart from "../components/CandleStickChart.tsx";
 
 function ChartsPage() {
     const [symbol, setSymbol] = useState<string>('NOW');
     const [searchQuery, setSearchQuery] = useState<string>('NOW');
     const [interval, setInterval] = useState<string>('1d');
-    const [range, setRange] = useState<string>('1mo');
-
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
+    const [chartData, setChartData] = useState<CandleData[]>([]);
 
-    const chartContainerRef = useRef<HTMLDivElement>(null);
-    const chartRef = useRef<any>(null)
-    const candleSeriesRef = useRef<any>(null)
+
     const oldestTimeRef = useRef<string | number | null>(null)
     const isLoadingMoreRef = useRef<boolean>(false);
     const currentDataRef = useRef<CandleData[]>([])
@@ -108,16 +60,7 @@ function ChartsPage() {
 
             currentDataRef.current = mergedData;
             oldestTimeRef.current = mergedData[0].time;
-            const timeScale = chartRef.current.timeScale();
-            const logicalRange = timeScale.getVisibleLogicalRange();
-            candleSeriesRef.current.setData(mergedData);
-            if (logicalRange) {
-                const addedBarsCount = filteredNewData.length;
-                timeScale.setVisibleLogicalRange({
-                    from: logicalRange.from + addedBarsCount,
-                    to: logicalRange.to + addedBarsCount
-                });
-            }
+            setChartData([...mergedData]);
         }catch(err) {
             console.error("Error during fetching data", err);
         } finally {
@@ -129,6 +72,7 @@ function ChartsPage() {
         currentSymbolRef.current = searchQuery;
         currentIntervalRef.current = interval;
         hasMoreDataRef.current = true;
+        const range = INTERVAL_DEFAULT_RANGE[currentIntervalRef.current]
         const fetchChartData = async () => {
             setLoading(true);
             setError(null);
@@ -144,77 +88,23 @@ function ChartsPage() {
 
                 if (jsonData.candles.length > 0) {
                     oldestTimeRef.current = jsonData.candles[0].time;
-                    if (candleSeriesRef.current) {
-                        candleSeriesRef.current.setData(jsonData.candles);
-                        chartRef.current.timeScale().fitContent();
-                    }
+                    setChartData(jsonData.candles);
                 } else {
                     oldestTimeRef.current = null;
-                    if (candleSeriesRef.current) candleSeriesRef.current.setData([]);
+                    setChartData([]);
                 }
             } catch (err: any) {
                 setError(err.message || 'Something went wrong');
                 currentDataRef.current = [];
                 oldestTimeRef.current = null;
-                if (candleSeriesRef.current) candleSeriesRef.current.setData([]);
+                setChartData([]);
             } finally {
                 setLoading(false);
             }
         };
 
         fetchChartData();
-    }, [searchQuery,interval, range, ]);
-
-    useEffect(() => {
-        if (!chartContainerRef.current) return;
-
-       const chart = createChart(chartContainerRef.current, {
-           width: chartContainerRef.current.clientWidth,
-           height: 400,
-           layout: {
-               background: { color: '#ffffff' },
-               textColor: '#333333',
-           },
-           grid: {
-               vertLines: { color: '#f0f0f0' },
-               horzLines: { color: '#f0f0f0' },
-           },
-       });
-
-       const candleSeries = chart.addSeries(CandlestickSeries, {
-           upColor: '#26a69a',
-           downColor: '#ef5350',
-           borderVisible: false,
-           wickUpColor: '#26a69a',
-           wickDownColor: '#ef5350',
-       });
-
-       chartRef.current = chart;
-       candleSeriesRef.current = candleSeries;
-
-       chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
-           if (range && range.from < 2) {
-               loadMoreData();
-           }
-       });
-
-       const handleResize = () => {
-           if (chartContainerRef.current && chartRef.current) {
-               chartRef.current.applyOptions({
-                   width: chartContainerRef.current.clientWidth,
-               });
-           }
-       };
-
-       window.addEventListener('resize', handleResize);
-
-       return () => {
-           window.removeEventListener('resize', handleResize);
-           chart.remove();
-           chartRef.current = null;
-           candleSeriesRef.current = null;
-       };
-    }, []);
+    }, [searchQuery, interval]);
 
     const handleSearch = (e: React.SyntheticEvent) => {
         e.preventDefault();
@@ -222,12 +112,6 @@ function ChartsPage() {
             setSearchQuery(symbol.toUpperCase().trim());
         }
     };
-
-    const handleIntervalChange = (newInterval: string) => {
-        setInterval(newInterval);
-        const availableRanges = INTERVAL_RANGE_MAP[newInterval] ?? ['1mo']
-        setRange(availableRanges[0])
-    }
 
     return (
         <div className="p-6 max-w-7xl mx-auto font-sans">
@@ -244,7 +128,7 @@ function ChartsPage() {
                 </div>
                 <select
                     value={interval}
-                    onChange={(e) => handleIntervalChange(e.target.value)}
+                    onChange={(e) => setInterval(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                     <option value="1m">1 minute</option>
@@ -255,17 +139,6 @@ function ChartsPage() {
                     <option value="4h">4 hours</option>
                     <option value="1d">1 day</option>
                     <option value="1wk">1 week</option>
-                </select>
-                <select
-                    value={range}
-                    onChange={(e) => setRange(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    {(INTERVAL_RANGE_MAP[interval] ?? ['1mo', '3mo', '6mo', '1y', 'max']).map(r => (
-                        <option key={r} value={r}>
-                            {RANGE_LABELS[r] ?? r}
-                        </option>
-                    ))}
                 </select>
                 <button
                     type="submit"
@@ -284,10 +157,7 @@ function ChartsPage() {
                     <strong>Błąd:</strong> {error}
                 </div>
             )}
-            <div
-                ref={chartContainerRef}
-                className="relative border border-gray-200 rounded-xl mt-4 bg-white p-2 shadow-md min-h-[400px]"
-            />
+            <CandleStickChart data ={chartData} onNeedMoreData= {loadMoreData}/>
         </div>
     );
 }

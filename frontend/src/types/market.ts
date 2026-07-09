@@ -29,7 +29,7 @@ export interface Market {
 }
 
 export interface CandleData {
-    time: string
+    time: string | number
     open: number
     high: number
     low: number
@@ -37,10 +37,11 @@ export interface CandleData {
     volume: number
 }
 
-export interface BollingerData {
-    upper: LineData[]
-    middle: LineData[]
-    lower: LineData[]
+export interface BollingerBandPoint {
+    time: string | number
+    upper: number
+    middle: number
+    lower: number
 }
 
 export interface ChartResponse {
@@ -48,5 +49,10 @@ export interface ChartResponse {
     sma?: LineData[]
     ema?: LineData[]
     rsi?: LineData[]
-    bb?: BollingerData[]
+    bb?: BollingerBandPoint[]
+}
+
+export interface CandlestickChartProps {
+    data: CandleData[]
+    onNeedMoreData: () => void
 }
