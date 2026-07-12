@@ -1,16 +1,17 @@
-import React, {useEffect, useRef, useState} from "react";
-import {ChartResponse, CandleData} from "../types/market.ts";
+import {useEffect, useRef, useState} from "react";
+import {ChartResponse, CandleData, SearchResult} from "../types/market.ts";
 import {INTERVAL_DEFAULT_RANGE, INTERVAL_OFFSET_MAP, toDate, toDateString} from "../utils/chartHelpers.ts"
 import CandleStickChart from "../components/CandleStickChart.tsx";
 
 function ChartsPage() {
-    const [symbol, setSymbol] = useState<string>('NOW');
-    const [searchQuery, setSearchQuery] = useState<string>('NOW');
+    const [symbol, setSymbol] = useState<string>("");
+    const [searchQuery, setSearchQuery] = useState<string>("");
     const [interval, setInterval] = useState<string>('1d');
     const [, setLoading] = useState<boolean>(false);
     const [, setError] = useState<string | null>(null);
     const [chartData, setChartData] = useState<CandleData[]>([]);
-
+    const [suggestion, setSuggestion] = useState<SearchResult[]>([]);
+    const [showSuggestion, setShowSuggestion] = useState<boolean>(false);
 
     const oldestTimeRef = useRef<string | number | null>(null)
     const isLoadingMoreRef = useRef<boolean>(false);
@@ -18,6 +19,7 @@ function ChartsPage() {
     const currentSymbolRef = useRef<string>(searchQuery);
     const currentIntervalRef = useRef<string>(interval);
     const hasMoreDataRef = useRef<boolean>(true);
+    const lastSelectedRef = useRef<string>('');
 
     const loadMoreData = async () => {
         if ( isLoadingMoreRef.current || !oldestTimeRef.current || !hasMoreDataRef.current ) return;
@@ -106,12 +108,28 @@ function ChartsPage() {
         fetchChartData();
     }, [searchQuery, interval]);
 
-    const handleSearch = (e: React.SyntheticEvent) => {
-        e.preventDefault();
-        if (symbol.trim()) {
-            setSearchQuery(symbol.toUpperCase().trim());
+    useEffect(() => {
+        if (symbol.length < 2) {
+            setSuggestion([]);
+            return;
         }
-    };
+        if (symbol === lastSelectedRef.current) return;
+        const timer = setTimeout(async() => {
+            const response = await fetch(`http://localhost:8000/api/search?q=${symbol}`)
+            const data = await response.json();
+            setSuggestion(data);
+            setShowSuggestion(true);
+        }, 300)
+        return () => clearTimeout(timer);
+    }, [symbol]);
+
+    const handleSelectSuggestion = (symbol: string) => {
+        setSuggestion([]);
+        setShowSuggestion(false)
+        setSymbol(symbol);
+        setSearchQuery(symbol);
+        lastSelectedRef.current = symbol;
+    }
 
     return (
         <div className="w-[calc(100%-4rem)] max-w-full font-sans flex flex-col lg:flex-row gap-4 p-4 min-h-dvh text-white ml-16">
@@ -119,14 +137,33 @@ function ChartsPage() {
                 <CandleStickChart data ={chartData} onNeedMoreData= {loadMoreData}/>
             </div>
             <div className="w-full lg:w-[25vw] min-w-70 bg-gray-900 p-3 rounded-xl flex flex-col gap-3">
-                <form onSubmit={handleSearch} className="w-full gap-2 flex flex-col items-stretch">
+                <div className="w-full gap-2 flex flex-col items-stretch">
+                    <div className="relative">
                     <input
                         type="text"
                         value={symbol}
                         onChange={(e) => setSymbol(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter" && symbol.trim()) {
+                                setSearchQuery(symbol.toUpperCase().trim());
+                                setShowSuggestion(false);
+                            }
+                        }}
                         placeholder="Symbol (np. AAPL)"
                         className="px-2 py-1 rounded-xl text-white text-base uppercase font-semibold w-full bg-gray-600 outline-none text-center"
                     />
+                    {showSuggestion && suggestion.length > 0 && (
+                        <div className="absolute top-full left-0 z-50 rounded-xl mt-1 w-full bg-gray-600">
+                            {suggestion.map((item) => (
+                                <div key = {item.symbol} onClick={()=>handleSelectSuggestion(item.symbol)}
+                                className="px-4 py-2 hover:bg-gray-500 cursor-pointer rounded-xl">
+                                <span className="font-semibold">{item.symbol}</span>
+                                <span className="text-sm ml-2">{item.name}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    </div>
                     <select
                         value={interval}
                         onChange={(e) => setInterval(e.target.value)}
@@ -141,11 +178,7 @@ function ChartsPage() {
                         <option value="1d">1 day</option>
                         <option value="1wk">1 week</option>
                     </select>
-                    <button
-                        type="submit"
-                        className="relative px-2 py-1 bg-gray-600 hover:bg-gray-400  font-medium rounded-xl cursor-pointer w-full transition-colors whitespace-nowrap"
-                    >Szukaj</button>
-                </form>
+                </div>
             </div>
         </div>
     );

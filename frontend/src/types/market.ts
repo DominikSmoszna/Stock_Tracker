@@ -56,3 +56,9 @@ export interface CandlestickChartProps {
     data: CandleData[]
     onNeedMoreData: () => void
 }
+
+export interface SearchResult {
+    symbol: string
+    name: string
+    type: string
+}
