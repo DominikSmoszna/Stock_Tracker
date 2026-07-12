@@ -99,6 +99,7 @@ function CandleStickChart({data, onNeedMoreData}: CandlestickChartProps) {
                 });
             }
         }else {
+            candleSeriesRef.current.priceScale().applyOptions({autoScale: true});
             timeScale.fitContent();
         }
         prevDataLengthRef.current = data.length;
