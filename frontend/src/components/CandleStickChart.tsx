@@ -1,5 +1,5 @@
 import {useEffect, useRef} from "react";
-import {CandlestickSeries, createChart} from "lightweight-charts";
+import {CandlestickSeries, createChart, TickMarkType} from "lightweight-charts";
 import {CandlestickChartProps} from "../types/market.ts"
 
 function CandleStickChart({data, onNeedMoreData}: CandlestickChartProps) {
@@ -20,23 +20,44 @@ function CandleStickChart({data, onNeedMoreData}: CandlestickChartProps) {
 
         const chart = createChart(chartContainerRef.current, {
             width: chartContainerRef.current.clientWidth,
-            height: 400,
+            height: chartContainerRef.current.clientHeight || 400,
             layout: {
-                background: { color: '#ffffff' },
-                textColor: '#333333',
+                background: { color: '#141009' },
+                textColor: '#ffffff',
             },
             grid: {
-                vertLines: { color: '#f0f0f0' },
-                horzLines: { color: '#f0f0f0' },
+                vertLines: { color: '#25211a' },
+                horzLines: { color: '#25211a' },
             },
+            timeScale: {
+                timeVisible: true,
+                tickMarkFormatter: (time: number | string, tickMarkType: TickMarkType, locale: string) => {
+                    const date = typeof time === 'number'
+                        ? new Date(time*1000)
+                        : new Date(time)
+
+                    switch (tickMarkType) {
+                        case TickMarkType.Year:
+                            return date.toLocaleDateString(locale, {year: 'numeric'});
+                        case TickMarkType.Month:
+                            return date.toLocaleDateString(locale, {month: 'short'});
+                        case TickMarkType.DayOfMonth:
+                            return date.toLocaleDateString(locale, {day: 'numeric'});
+                        case TickMarkType.Time:
+                            return date.toLocaleTimeString(locale, {hour: '2-digit', minute: '2-digit'});
+                        default:
+                            return date.toLocaleDateString(locale)
+                    }
+                }
+            }
         });
 
         const candleSeries = chart.addSeries(CandlestickSeries, {
-            upColor: '#26a69a',
-            downColor: '#ef5350',
+            upColor: '#e3a24c',
+            downColor: '#594b38',
             borderVisible: false,
-            wickUpColor: '#26a69a',
-            wickDownColor: '#ef5350',
+            wickUpColor: '#e3a24c',
+            wickDownColor: '#594b38',
         });
 
         chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
@@ -48,18 +69,16 @@ function CandleStickChart({data, onNeedMoreData}: CandlestickChartProps) {
         chartRef.current = chart;
         candleSeriesRef.current = candleSeries;
 
-        const handleResize = () => {
-            if (chartContainerRef.current && chartRef.current) {
-                chartRef.current.applyOptions({
-                    width: chartContainerRef.current.clientWidth,
-                });
-            }
-        };
+        const resizeObserver = new ResizeObserver((entries) => {
+            if (entries.length === 0 || !chartRef.current) return;
+            const {width, height} = entries[0].contentRect;
+            chartRef.current.resize(width, height);
+        });
 
-        window.addEventListener('resize', handleResize);
+        resizeObserver.observe(chartContainerRef.current);
 
         return () => {
-            window.removeEventListener('resize', handleResize);
+            resizeObserver.disconnect();
             chart.remove();
             chartRef.current = null;
             candleSeriesRef.current = null;
@@ -68,7 +87,6 @@ function CandleStickChart({data, onNeedMoreData}: CandlestickChartProps) {
 
     useEffect(() => {
         if (!candleSeriesRef.current || !chartRef.current || data.length === 0) return;
-        if (!candleSeriesRef.current || !chartRef.current) return;
         const timeScale = chartRef.current.timeScale();
         const logicalRange = timeScale.getVisibleLogicalRange();
         candleSeriesRef.current.setData(data)
@@ -88,8 +106,8 @@ function CandleStickChart({data, onNeedMoreData}: CandlestickChartProps) {
     }, [data]);
 
     return (<div
+        className="w-full h-full rounded-xl overflow-hidden"
         ref={chartContainerRef}
-        className="relative border border-gray-200 rounded-xl mt-4 bg-white p-2 shadow-md min-h-[400px]"
     />)
 }
 
