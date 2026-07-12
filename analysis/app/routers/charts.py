@@ -101,3 +101,28 @@ async def get_chart_data(chart_data: ChartAPI):
             continue
         result[indicator] = calc_function(df,chart_data.indicators[indicator])
     return result
+
+class SearchResult(BaseModel):
+    symbol: str
+    name: str
+    type: str
+
+@router.get("/search")
+async def get_search_results(
+        q: str,
+    ):
+    search_data = yf.Search(q)
+    results = []
+
+    if search_data.quotes:
+        for quote in search_data.quotes[:10]:
+            name = quote.get("shortname") or quote.get("longname") or "Unknown"
+            results.append(
+                SearchResult(
+                    symbol=quote.get("symbol", ""),
+                    name=name,
+                    type=quote.get("typeDisp", "Unknown"),
+                )
+            )
+    return results
+
