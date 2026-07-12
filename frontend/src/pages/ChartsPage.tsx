@@ -7,8 +7,8 @@ function ChartsPage() {
     const [symbol, setSymbol] = useState<string>('NOW');
     const [searchQuery, setSearchQuery] = useState<string>('NOW');
     const [interval, setInterval] = useState<string>('1d');
-    const [loading, setLoading] = useState<boolean>(false);
-    const [error, setError] = useState<string | null>(null);
+    const [, setLoading] = useState<boolean>(false);
+    const [, setError] = useState<string | null>(null);
     const [chartData, setChartData] = useState<CandleData[]>([]);
 
 
@@ -114,50 +114,39 @@ function ChartsPage() {
     };
 
     return (
-        <div className="p-6 max-w-7xl mx-auto font-sans">
-            <h1 className="text-3xl font-bold text-gray-800 mb-6">Charts Page</h1>
-            <form onSubmit={handleSearch} className="mb-6 flex flex-wrap gap-4 items-center bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm">
-                <div className="relative">
+        <div className="w-[calc(100%-4rem)] max-w-full font-sans flex flex-col lg:flex-row gap-4 p-4 min-h-dvh text-white ml-16">
+            <div className="flex-1 min-w-75 h-full lg:h-auto rounded-xl overflow-hidden">
+                <CandleStickChart data ={chartData} onNeedMoreData= {loadMoreData}/>
+            </div>
+            <div className="w-full lg:w-[25vw] min-w-70 bg-gray-900 p-3 rounded-xl flex flex-col gap-3">
+                <form onSubmit={handleSearch} className="w-full gap-2 flex flex-col items-stretch">
                     <input
                         type="text"
                         value={symbol}
                         onChange={(e) => setSymbol(e.target.value)}
                         placeholder="Symbol (np. AAPL)"
-                        className="px-4 py-2 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase font-semibold w-48 bg-white"
+                        className="px-2 py-1 rounded-xl text-white text-base uppercase font-semibold w-full bg-gray-600 outline-none text-center"
                     />
-                </div>
-                <select
-                    value={interval}
-                    onChange={(e) => setInterval(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option value="1m">1 minute</option>
-                    <option value="5m">5 minutes</option>
-                    <option value="15m">15 minutes</option>
-                    <option value="30m">30 minutes</option>
-                    <option value="1h">1 hour</option>
-                    <option value="4h">4 hours</option>
-                    <option value="1d">1 day</option>
-                    <option value="1wk">1 week</option>
-                </select>
-                <button
-                    type="submit"
-                    className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors duration-150 cursor-pointer"
-                >
-                    Szukaj
-                </button>
-            </form>
-            {loading && (
-                <div className="flex items-center gap-2 text-gray-600 mb-4 animate-pulse">
-                    <span>Ładowanie danych z rynku...</span>
-                </div>
-            )}
-            {error && (
-                <div className="p-4 mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-                    <strong>Błąd:</strong> {error}
-                </div>
-            )}
-            <CandleStickChart data ={chartData} onNeedMoreData= {loadMoreData}/>
+                    <select
+                        value={interval}
+                        onChange={(e) => setInterval(e.target.value)}
+                        className="px-2 py-1 rounded-xl text-white bg-gray-600 w-full font-semibold outline-none text-center"
+                    >
+                        <option value="1m">1 minute</option>
+                        <option value="5m">5 minutes</option>
+                        <option value="15m">15 minutes</option>
+                        <option value="30m">30 minutes</option>
+                        <option value="1h">1 hour</option>
+                        <option value="4h">4 hours</option>
+                        <option value="1d">1 day</option>
+                        <option value="1wk">1 week</option>
+                    </select>
+                    <button
+                        type="submit"
+                        className="relative px-2 py-1 bg-gray-600 hover:bg-gray-400  font-medium rounded-xl cursor-pointer w-full transition-colors whitespace-nowrap"
+                    >Szukaj</button>
+                </form>
+            </div>
         </div>
     );
 }

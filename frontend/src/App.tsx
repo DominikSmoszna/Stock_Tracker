@@ -11,7 +11,7 @@ function App() {
   return (
       <BrowserRouter>
           <Navbar />
-          <div className={`transition-all duration-300 ml-16`}>
+          <div className={`transition-all duration-300 bg-gray-800`}>
           <Routes>
               <Route path="/" element = {<HomePage/>} />
               <Route path="/charts" element = {<ChartsPage/>} />
