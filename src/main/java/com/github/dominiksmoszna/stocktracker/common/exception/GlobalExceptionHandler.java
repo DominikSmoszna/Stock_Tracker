@@ -18,4 +18,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handlePriceAlertNotFoundException(PriceAlertNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(e.getMessage()));
     }
+
+    @ExceptionHandler(PortfolioPositionNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePortfolioPositionNotFoundException(PortfolioPositionNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(e.getMessage()));
+    }
 }

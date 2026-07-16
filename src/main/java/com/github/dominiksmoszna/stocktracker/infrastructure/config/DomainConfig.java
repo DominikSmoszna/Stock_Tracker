@@ -52,6 +52,17 @@ public class DomainConfig {
     }
 
     @Bean
+    public PortfolioService portfolioService(
+            LoadPortfolioPort loadPortfolioPort,
+            ManagePortfolioPort managePortfolioPort
+    ) {
+        return new PortfolioService(
+                loadPortfolioPort,
+                managePortfolioPort
+        );
+    }
+
+    @Bean
     public MarketQuoteService marketQuoteService(
             MarketDataPort marketDataPort
     ){
