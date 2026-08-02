@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import charts
+from app.routers import charts, fx, portfolio
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
@@ -14,7 +14,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(charts.router, prefix="/api")
+app.include_router(charts.router)
+app.include_router(fx.router)
+app.include_router(portfolio.router)
 
 @app.get("/")
 async def root():

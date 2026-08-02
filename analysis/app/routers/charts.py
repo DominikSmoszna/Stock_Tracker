@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from app.indicators import parse_indicators, calculate_sma, calculate_ema, calculate_rsi, calculate_bb
 
-router = APIRouter()
+router = APIRouter(prefix="/api", tags=["Charts"])
 
 INDICATOR_MAP = {
     "sma": calculate_sma,
