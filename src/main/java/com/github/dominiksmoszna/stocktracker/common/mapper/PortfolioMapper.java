@@ -14,7 +14,8 @@ public class PortfolioMapper {
                 portfolioPosition.ticker(),
                 portfolioPosition.quantity(),
                 portfolioPosition.purchasePrice(),
-                portfolioPosition.purchaseDate()
+                portfolioPosition.purchaseDate(),
+                portfolioPosition.currency()
         );
     }
 }

@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Currency;
 import java.util.UUID;
 
 public record CreatePositionRequest(
@@ -17,6 +18,8 @@ public record CreatePositionRequest(
         @NotNull
         BigDecimal purchasePrice,
         @NotNull
-        LocalDate purchaseDate
+        LocalDate purchaseDate,
+        @NotNull
+        Currency currency
 ) {
 }

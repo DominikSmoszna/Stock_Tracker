@@ -4,11 +4,12 @@ import com.github.dominiksmoszna.stocktracker.domain.model.PortfolioPosition;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Currency;
 import java.util.List;
 import java.util.UUID;
 
 public interface ManagePortfolioUseCase {
-    PortfolioPosition addPosition(UUID userId, String ticker, BigDecimal quantity, BigDecimal purchasePrice, LocalDate purchaseDate);
+    PortfolioPosition addPosition(UUID userId, String ticker, BigDecimal quantity, BigDecimal purchasePrice, LocalDate purchaseDate, Currency currency);
     void removePosition(UUID positionId);
     List<PortfolioPosition> getPositions(UUID userId);
 }

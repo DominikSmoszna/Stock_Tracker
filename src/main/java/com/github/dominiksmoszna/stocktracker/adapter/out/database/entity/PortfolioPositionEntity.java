@@ -29,14 +29,17 @@ public class PortfolioPositionEntity {
     private BigDecimal purchasePrice;
     @Column(name = "purchaseDate", nullable = false)
     private LocalDate purchaseDate;
+    @Column(name = "currency", nullable = false, length = 3)
+    private String currency;
 
-    public PortfolioPositionEntity(UUID id, UUID userId, String ticker, BigDecimal quantity, BigDecimal purchasePrice, LocalDate purchaseDate){
+    public PortfolioPositionEntity(UUID id, UUID userId, String ticker, BigDecimal quantity, BigDecimal purchasePrice, LocalDate purchaseDate, String currency){
         this.id = id;
         this.userId = userId;
         this.ticker = ticker;
         this.quantity = quantity;
         this.purchasePrice = purchasePrice;
         this.purchaseDate = purchaseDate;
+        this.currency = currency;
     }
 
 }

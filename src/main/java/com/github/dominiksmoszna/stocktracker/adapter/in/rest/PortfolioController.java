@@ -27,7 +27,7 @@ public class PortfolioController {
 
     @PostMapping("/")
     public ResponseEntity<PortfolioPositionDto> addPosition(@RequestBody @Valid CreatePositionRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(PortfolioMapper.toDto(managePortfolioUseCase.addPosition(request.userId(), request.ticker(), request.quantity(), request.purchasePrice(), request.purchaseDate())));
+        return ResponseEntity.status(HttpStatus.CREATED).body(PortfolioMapper.toDto(managePortfolioUseCase.addPosition(request.userId(), request.ticker(), request.quantity(), request.purchasePrice(), request.purchaseDate(), request.currency())));
     }
 
     @DeleteMapping("/{positionId}")

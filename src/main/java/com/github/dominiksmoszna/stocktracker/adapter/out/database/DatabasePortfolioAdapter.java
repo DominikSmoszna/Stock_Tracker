@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.Currency;
 import java.util.List;
 import java.util.UUID;
 
@@ -55,7 +56,8 @@ public class DatabasePortfolioAdapter implements LoadPortfolioPort, ManagePortfo
                 position.ticker(),
                 position.quantity(),
                 position.purchasePrice(),
-                position.purchaseDate()
+                position.purchaseDate(),
+                position.currency().getCurrencyCode()
         );
     }
 
@@ -66,7 +68,8 @@ public class DatabasePortfolioAdapter implements LoadPortfolioPort, ManagePortfo
                 position.getTicker(),
                 position.getQuantity(),
                 position.getPurchasePrice(),
-                position.getPurchaseDate()
+                position.getPurchaseDate(),
+                Currency.getInstance(position.getCurrency())
         );
     }
 }

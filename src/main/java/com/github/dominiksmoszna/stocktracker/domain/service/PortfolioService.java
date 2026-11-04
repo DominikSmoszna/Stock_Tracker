@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Currency;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,9 +21,9 @@ public class PortfolioService implements ManagePortfolioUseCase {
     private final ManagePortfolioPort managePortfolioPort;
 
     @Override
-    public PortfolioPosition addPosition(UUID userId, String ticker, BigDecimal quantity, BigDecimal purchasePrice, LocalDate purchaseDate) {
+    public PortfolioPosition addPosition(UUID userId, String ticker, BigDecimal quantity, BigDecimal purchasePrice, LocalDate purchaseDate, Currency currency) {
         UUID id = UUID.randomUUID();
-        PortfolioPosition portfolioPosition = new PortfolioPosition(id, userId, ticker, quantity, purchasePrice, purchaseDate);
+        PortfolioPosition portfolioPosition = new PortfolioPosition(id, userId, ticker, quantity, purchasePrice, purchaseDate, currency);
         managePortfolioPort.savePosition(portfolioPosition);
         return portfolioPosition;
     }

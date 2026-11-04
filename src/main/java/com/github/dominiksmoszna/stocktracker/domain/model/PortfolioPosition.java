@@ -2,6 +2,7 @@ package com.github.dominiksmoszna.stocktracker.domain.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Currency;
 import java.util.UUID;
 
 public record PortfolioPosition(
@@ -10,6 +11,7 @@ public record PortfolioPosition(
         String ticker,
         BigDecimal quantity,
         BigDecimal purchasePrice,
-        LocalDate purchaseDate
+        LocalDate purchaseDate,
+        Currency currency
 ) {
 }
