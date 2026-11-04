@@ -40,9 +40,9 @@ function MarketIndices() {
         }
 
     return(
-        <div className="flex flex-wrap gap-4 p-4 bg-gray-50 rounded-lg shadow-sm w-[90%] mx-auto justify-between">
+        <div className="flex flex-wrap gap-4 p-4 bg-gray-500 rounded-lg shadow-sm w-[90%] mx-auto justify-between mt-16">
             {quoteList.map((quote)=>(
-                <div key={quote.symbol} className=" flex flex-col p-3 bg-slate-300 border border-gray-200 rounded-md min-w-[160px] transition-transform duration-300 ease-in-out hover:scale-[1.1] cursor-pointer">
+                <div key={quote.symbol} className=" flex flex-col p-3 bg-slate-300 border border-gray-200 rounded-md min-w-40 transition-transform duration-300 ease-in-out hover:scale-[1.1] cursor-pointer">
                     <span className="text-sm font-bold text-gray-700">{quote.symbol}</span>
                     <div className="gap-2">
                     <span className="text-l font-semibold text-gray-900">

@@ -26,7 +26,7 @@ function HomePage() {
         }, [])
 
   return (
-      <div>
+      <div className="w-[calc(100%-4rem)] max-w-full font-sans gap-4 p-4 min-h-dvh text-white ml-16">
           <MarketHours/>
           <MarketIndices/>
           {Object.values(prices).map(price=>(
