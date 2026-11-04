@@ -15,31 +15,49 @@ import java.util.List;
 @Slf4j
 public class FinnhubWebSocketClient extends WebSocketClient {
 
+    private static final long RECONNECT_DELAY_MS = 5_000L;
+
     private final ProcessMarketDataUseCase processMarketDataUseCase;
+    private final Runnable onConnectedCallback;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private volatile boolean reconnectEnabled = true;
 
     public FinnhubWebSocketClient(URI serverUri, ProcessMarketDataUseCase processMarketDataUseCase) {
+        this(serverUri, processMarketDataUseCase, () -> {});
+    }
+
+    public FinnhubWebSocketClient(
+            URI serverUri,
+            ProcessMarketDataUseCase processMarketDataUseCase,
+            Runnable onConnectedCallback
+    ) {
         super(serverUri);
         this.processMarketDataUseCase = processMarketDataUseCase;
+        this.onConnectedCallback = onConnectedCallback != null ? onConnectedCallback : () -> {};
     }
 
     @Override
     public void onOpen(ServerHandshake serverHandshake) {
         log.info("Websocket connection established");
+        try {
+            onConnectedCallback.run();
+        } catch (Exception e) {
+            log.error("Error while subscribing tracked symbols after WebSocket open", e);
+        }
     }
 
     @Override
     public void onMessage(String s) {
         try {
             FinnhubTradeMessageDTO tradeMessage = objectMapper.readValue(s, FinnhubTradeMessageDTO.class);
-            if (tradeMessage.type().equals("trade")) {
+            if ("trade".equals(tradeMessage.type()) && tradeMessage.data() != null) {
                 List<StockPrice> stockPrices = tradeMessage.data().stream().map(data -> new StockPrice(
                         data.symbol(),
                         data.price(),
                         Instant.ofEpochMilli(data.timestamp())
                 )).toList();
                 stockPrices.forEach(processMarketDataUseCase::processPrice);
-            }else{
+            } else {
                 log.info("Different type message {}", tradeMessage.type());
             }
         } catch (JacksonException e) {
@@ -48,28 +66,38 @@ public class FinnhubWebSocketClient extends WebSocketClient {
     }
 
     @Override
-    public void onClose(int i, String s, boolean b) {
-        if (!b){
-            log.info("Websocket connection closed unexpectedly, exit code: {}", i);
-            new Thread(() -> {
+    public void onClose(int code, String reason, boolean remote) {
+        if (reconnectEnabled && remote) {
+            log.info("Websocket connection closed by remote (code: {}, reason: {}), scheduling reconnect", code, reason);
+            Thread reconnectThread = new Thread(() -> {
                 try {
+                    Thread.sleep(RECONNECT_DELAY_MS);
+                    if (!reconnectEnabled) {
+                        return;
+                    }
                     log.info("Trying to reconnect to Finnhub");
                     reconnectBlocking();
                 } catch (InterruptedException e) {
-                        log.error("Reconnection interrupted", e);
+                    log.error("Reconnection interrupted", e);
                     Thread.currentThread().interrupt();
                 } catch (Exception e) {
                     log.error("Error while trying to reconnect to Finnhub", e);
                 }
-            }).start();
-        }
-        else {
-            log.info("Websocket connection closed, exit code: {}", i);
+            }, "finnhub-ws-reconnect");
+            reconnectThread.setDaemon(true);
+            reconnectThread.start();
+        } else {
+            log.info("Websocket connection closed (code: {}, reason: {}, remote: {})", code, reason, remote);
         }
     }
 
     @Override
     public void onError(Exception e) {
         log.error(e.getMessage(), e);
+    }
+
+    public void shutdown() {
+        reconnectEnabled = false;
+        close();
     }
 }
