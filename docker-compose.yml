@@ -22,8 +22,10 @@ services:
       - SPRING_DATASOURCE_USERNAME=${DB_USER}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
       - FINNHUB_API_KEY=${FINNHUB_API_KEY}
+      - PYTHON_SERVICE_URL=http://backend-python:8000
     depends_on:
       - postgres-db
+      - backend-python
 
   backend-python:
     build: ./analysis
