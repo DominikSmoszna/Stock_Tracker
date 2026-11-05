@@ -14,11 +14,11 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("api/alerts")
+@RequestMapping("/api/alerts")
 @RequiredArgsConstructor
 public class AlertController {
 
-    private final ManageAlertUseCase  manageAlertUseCase;
+    private final ManageAlertUseCase manageAlertUseCase;
 
     @GetMapping("/{userId}")
     public ResponseEntity<List<AlertDto>> getPriceAlerts(@PathVariable("userId") UUID userId) {
@@ -26,11 +26,11 @@ public class AlertController {
     }
 
     @GetMapping("/{userId}/{ticker}")
-    public  ResponseEntity<List<AlertDto>> getPriceAlertsByTicker(@PathVariable("userId") UUID userId,@PathVariable("ticker")  String ticker) {
-        return ResponseEntity.ok(manageAlertUseCase.getPriceAlertsByTicker(userId,ticker).stream().map(AlertMapper::toDto).toList());
+    public ResponseEntity<List<AlertDto>> getPriceAlertsByTicker(@PathVariable("userId") UUID userId, @PathVariable("ticker") String ticker) {
+        return ResponseEntity.ok(manageAlertUseCase.getPriceAlertsByTicker(userId, ticker).stream().map(AlertMapper::toDto).toList());
     }
 
-    @PostMapping("/")
+    @PostMapping
     public ResponseEntity<AlertDto> createAlert(@RequestBody @Valid CreateAlertRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(AlertMapper.toDto(manageAlertUseCase.addAlert(request.userId(), request.ticker(), request.threshold(), request.type())));
     }
@@ -38,7 +38,7 @@ public class AlertController {
     @DeleteMapping("/{alertId}")
     public ResponseEntity<Void> deleteAlert(@PathVariable("alertId") UUID alertId) {
         manageAlertUseCase.removeAlert(alertId);
-        return  ResponseEntity.noContent().build();
+        return ResponseEntity.noContent().build();
     }
 
 }
