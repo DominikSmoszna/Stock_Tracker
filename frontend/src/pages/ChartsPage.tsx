@@ -1,7 +1,8 @@
 import {useEffect, useRef, useState} from "react";
-import {ChartResponse, CandleData, SearchResult} from "../types/market.ts";
+import {CandleData, SearchResult} from "../types/market.ts";
 import {INTERVAL_DEFAULT_RANGE, INTERVAL_OFFSET_MAP, toDate, toDateString} from "../utils/chartHelpers.ts"
 import CandleStickChart from "../components/CandleStickChart.tsx";
+import {fetchChartData, searchSymbols} from "../api/client.ts";
 
 function ChartsPage() {
     const [symbol, setSymbol] = useState<string>("");
@@ -22,7 +23,7 @@ function ChartsPage() {
     const lastSelectedRef = useRef<string>('');
 
     const loadMoreData = async () => {
-        if ( isLoadingMoreRef.current || !oldestTimeRef.current || !hasMoreDataRef.current ) return;
+        if (isLoadingMoreRef.current || !oldestTimeRef.current || !hasMoreDataRef.current) return;
         isLoadingMoreRef.current = true;
 
         try {
@@ -35,13 +36,11 @@ function ChartsPage() {
             const startParam = toDateString(startDate);
             const endParam = toDateString(oldestTimeRef.current);
 
-            const response = await fetch(
-                `http://localhost:8000/api/chart/${currentSymbolRef.current}?interval=${currentIntervalRef.current}&start=${startParam}&end=${endParam}`
-            );
-
-            if (!response.ok) throw new Error();
-
-            const newData: ChartResponse = await response.json();
+            const newData = await fetchChartData(currentSymbolRef.current, {
+                interval: currentIntervalRef.current,
+                start: startParam,
+                end: endParam,
+            });
             const oldestTime = oldestTimeRef.current;
 
             if (!newData.candles || newData.candles.length === 0) {
@@ -63,7 +62,7 @@ function ChartsPage() {
             currentDataRef.current = mergedData;
             oldestTimeRef.current = mergedData[0].time;
             setChartData([...mergedData]);
-        }catch(err) {
+        } catch (err) {
             console.error("Error during fetching data", err);
         } finally {
             isLoadingMoreRef.current = false;
@@ -71,21 +70,20 @@ function ChartsPage() {
     };
 
     useEffect(() => {
+        if (!searchQuery) return;
         currentSymbolRef.current = searchQuery;
         currentIntervalRef.current = interval;
         hasMoreDataRef.current = true;
-        const range = INTERVAL_DEFAULT_RANGE[currentIntervalRef.current]
-        const fetchChartData = async () => {
+        const range = INTERVAL_DEFAULT_RANGE[currentIntervalRef.current];
+
+        const loadInitialChartData = async () => {
             setLoading(true);
             setError(null);
             try {
-                const response = await fetch(
-                    `http://localhost:8000/api/chart/${searchQuery}?interval=${interval}&range=${range}`
-                );
-                if (!response.ok){
-                    throw new Error('Error fetching chart data');
-                }
-                const jsonData: ChartResponse = await response.json();
+                const jsonData = await fetchChartData(searchQuery, {
+                    interval,
+                    range,
+                });
                 currentDataRef.current = jsonData.candles;
 
                 if (jsonData.candles.length > 0) {
@@ -105,7 +103,7 @@ function ChartsPage() {
             }
         };
 
-        fetchChartData();
+        loadInitialChartData();
     }, [searchQuery, interval]);
 
     useEffect(() => {
@@ -114,31 +112,30 @@ function ChartsPage() {
             return;
         }
         if (symbol === lastSelectedRef.current) return;
-        const timer = setTimeout(async() => {
-            const response = await fetch(`http://localhost:8000/api/search?q=${symbol}`)
-            const data = await response.json();
+        const timer = setTimeout(async () => {
+            const data = await searchSymbols(symbol);
             setSuggestion(data);
             setShowSuggestion(true);
-        }, 300)
+        }, 300);
         return () => clearTimeout(timer);
     }, [symbol]);
 
-    const handleSelectSuggestion = (symbol: string) => {
+    const handleSelectSuggestion = (selectedSymbol: string) => {
         setSuggestion([]);
-        setShowSuggestion(false)
-        setSymbol(symbol);
-        setSearchQuery(symbol);
-        lastSelectedRef.current = symbol;
-    }
+        setShowSuggestion(false);
+        setSymbol(selectedSymbol);
+        setSearchQuery(selectedSymbol);
+        lastSelectedRef.current = selectedSymbol;
+    };
 
     return (
-        <div className="w-[calc(100%-4rem)] max-w-full font-sans flex flex-col lg:flex-row gap-4 p-4 min-h-dvh text-white ml-16">
-            <div className="flex-1 min-w-75 h-full lg:h-auto rounded-xl overflow-hidden">
-                <CandleStickChart data ={chartData} onNeedMoreData= {loadMoreData}/>
+        <div className="flex flex-col lg:flex-row gap-4 p-4 sm:p-6 min-h-dvh lg:h-dvh">
+            <div className="flex-1 min-h-96 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                <CandleStickChart data={chartData} onNeedMoreData={loadMoreData}/>
             </div>
-            <div className="w-full lg:w-[25vw] min-w-70 bg-gray-900 p-3 rounded-xl flex flex-col gap-3">
-                <div className="w-full gap-2 flex flex-col items-stretch">
-                    <div className="relative">
+
+            <aside className="w-full lg:w-80 shrink-0 bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col gap-3">
+                <div className="relative">
                     <input
                         type="text"
                         value={symbol}
@@ -149,38 +146,43 @@ function ChartsPage() {
                                 setShowSuggestion(false);
                             }
                         }}
-                        placeholder="Symbol (np. AAPL)"
-                        className="px-2 py-1 rounded-xl text-white text-base uppercase font-semibold w-full bg-gray-600 outline-none text-center"
+                        placeholder="Symbol (e.g. AAPL)"
+                        className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-100 uppercase font-medium placeholder:normal-case placeholder:text-slate-500 focus:border-slate-500 outline-none"
                     />
                     {showSuggestion && suggestion.length > 0 && (
-                        <div className="absolute top-full left-0 z-50 rounded-xl mt-1 w-full bg-gray-600">
+                        <div className="absolute top-full left-0 z-50 mt-1 w-full bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden divide-y divide-slate-700/60">
                             {suggestion.map((item) => (
-                                <div key = {item.symbol} onClick={()=>handleSelectSuggestion(item.symbol)}
-                                className="px-4 py-2 hover:bg-gray-500 cursor-pointer rounded-xl">
-                                <span className="font-semibold">{item.symbol}</span>
-                                <span className="text-sm ml-2">{item.name}</span>
-                                </div>
+                                <button
+                                    type="button"
+                                    key={item.symbol}
+                                    onClick={() => handleSelectSuggestion(item.symbol)}
+                                    className="w-full text-left px-3 py-2 hover:bg-slate-700/70 transition-colors flex items-baseline justify-between gap-2"
+                                >
+                                    <span className="text-sm font-semibold text-slate-100">{item.symbol}</span>
+                                    <span className="text-xs text-slate-400 truncate">{item.name}</span>
+                                </button>
                             ))}
                         </div>
                     )}
-                    </div>
-                    <select
-                        value={interval}
-                        onChange={(e) => setInterval(e.target.value)}
-                        className="px-2 py-1 rounded-xl text-white bg-gray-600 w-full font-semibold outline-none text-center"
-                    >
-                        <option value="1m">1 minute</option>
-                        <option value="5m">5 minutes</option>
-                        <option value="15m">15 minutes</option>
-                        <option value="30m">30 minutes</option>
-                        <option value="1h">1 hour</option>
-                        <option value="4h">4 hours</option>
-                        <option value="1d">1 day</option>
-                        <option value="1wk">1 week</option>
-                    </select>
                 </div>
-            </div>
+
+                <select
+                    value={interval}
+                    onChange={(e) => setInterval(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-100 font-medium focus:border-slate-500 outline-none"
+                >
+                    <option value="1m">1 minute</option>
+                    <option value="5m">5 minutes</option>
+                    <option value="15m">15 minutes</option>
+                    <option value="30m">30 minutes</option>
+                    <option value="1h">1 hour</option>
+                    <option value="4h">4 hours</option>
+                    <option value="1d">1 day</option>
+                    <option value="1wk">1 week</option>
+                </select>
+            </aside>
         </div>
     );
 }
+
 export default ChartsPage

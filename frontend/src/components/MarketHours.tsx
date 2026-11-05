@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import {Market} from "../types/market.ts";
+import { Market } from "../types/market.ts"
 
-const MARKET_DATA = [
+const MARKET_DATA: Market[] = [
     {
         id: "london",
         name: "London",
@@ -40,96 +40,110 @@ const MARKET_DATA = [
     }
 ]
 
+function getMarketTimeInfo(market: Market, currentTime: Date) {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: market.timezone,
+        hour: "numeric",
+        minute: "numeric",
+        hour12: false,
+        weekday: "short",
+    })
+
+    const parts = formatter.formatToParts(currentTime)
+    const getPart = (type: string) => parts.find((p) => p.type === type)?.value ?? ''
+
+    const hour = parseInt(getPart("hour"), 10)
+    const minute = parseInt(getPart("minute"), 10)
+    const weekday = getPart("weekday")
+    const isWeekend = weekday === "Sat" || weekday === "Sun"
+
+    const currentMinutes = hour * 60 + minute
+    const openMinutes = market.openHour * 60 + market.openMinute
+    const closeMinutes = market.closeHour * 60 + market.closeMinute
+    const isOpen = !isWeekend && currentMinutes >= openMinutes && currentMinutes <= closeMinutes
+
+    const localTimeString = currentTime.toLocaleTimeString("en-GB", {
+        timeZone: market.timezone,
+        hour: '2-digit',
+        minute: '2-digit',
+    })
+
+    return {
+        isOpen,
+        isWeekend,
+        localTimeString,
+        currentPos: (currentMinutes / 1440) * 100,
+        openPos: (openMinutes / 1440) * 100,
+        marketWidth: ((closeMinutes - openMinutes) / 1440) * 100,
+    }
+}
+
 function MarketHours() {
     const [currentTime, setCurrentTime] = useState(new Date())
 
     useEffect(() => {
-            const timer = setInterval(()=> setCurrentTime(new Date()),30000);
-            return () => clearInterval(timer);
-        },[]);
-
-    const getMarketStatus = (market:Market):boolean =>  {
-
-            const formatter = Intl.DateTimeFormat("en-US", {
-                timeZone: market.timezone,
-                hour: "numeric",
-                minute: "numeric",
-                hour12: false,
-                weekday: "short",
-                });
-
-            const parts = formatter.formatToParts(currentTime);
-            const getPart = (type:string) => parts.find((p) => p.type === type)?.value ?? ''
-
-            const localHour = parseInt(getPart("hour"));
-            const localMinute = parseInt(getPart("minute"));
-            const localDay = getPart("weekday");
-
-            if (localDay === "Sat" || localDay === "Sun") return false;
-
-            const currentTotalMinutes = localHour * 60 + localMinute;
-            const openTotalMinutes = market.openHour * 60 + market.openMinute;
-            const closeTotalMinutes = market.closeHour * 60 + market.closeMinute;
-
-            return currentTotalMinutes >= openTotalMinutes && currentTotalMinutes <= closeTotalMinutes;
-            }
+        const timer = setInterval(() => setCurrentTime(new Date()), 30000)
+        return () => clearInterval(timer)
+    }, [])
 
     return (
-        <div className="p-4 bg-slate-900 rounded-xl border border-slate-800 shadow-lg w-[90%] mx-auto">
-            <h3 className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-4">Market Status</h3>
-            <div className="space-y-3">
+        <section className="p-4 sm:p-5 bg-slate-900 rounded-xl border border-slate-800">
+            <h3 className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-4">
+                Market Status
+            </h3>
+            <div className="divide-y divide-slate-800/80">
                 {MARKET_DATA.map((market) => {
-                    const isOpen= getMarketStatus(market);
-                    const localTimeString = currentTime.toLocaleTimeString("en-GB",{
-                        timeZone: market.timezone,
-                        hour: '2-digit',
-                        minute: '2-digit'
-                        });
-                    const formatter = new Intl.DateTimeFormat("en-US", {
-                        timeZone: market.timezone,
-                        hour: "numeric",
-                        minute: "numeric",
-                        hour12: false,
-                        weekday: "short"
-                        });
-                    const parts = formatter.formatToParts(currentTime);
-                    const getPart = (type:string) => parts.find((p) => p.type === type)?.value ?? ''
-                    const h = parseInt(getPart("hour"));
-                    const m = parseInt(getPart("minute"));
-                    const localDay = getPart("weekday");
-                    const currentPos = ((h*60+m)/1440)*100;
-                    const openPos = ((market.openHour*60 + market.openMinute)/1440)*100;
-                    const closePos = ((market.closeHour*60)/1440)*100;
-                    const marketWidth = closePos - openPos;
-                    const isWeekend = localDay === "Sat" || localDay === "Sun";
+                    const { isOpen, isWeekend, localTimeString, currentPos, openPos, marketWidth } =
+                        getMarketTimeInfo(market, currentTime)
+
                     return (
-                        <div key={market.id} className="flex items-center justify-between hover:bg-slate-800 border-b border-slate-800 last:border-0">
-                            <div className="flex flex-col w-[80px]">
-                            <span className="text-slate-200 font-medium">{market.name}</span>
-                            <span className="text-slate-500 text-[10px] front-mono">{localTimeString}</span>
+                        <div
+                            key={market.id}
+                            className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
+                        >
+                            <div className="w-24 shrink-0">
+                                <div className="text-sm text-slate-200 font-medium">{market.name}</div>
+                                <div className="text-xs text-slate-500 font-mono">{localTimeString}</div>
                             </div>
-                            <div className="relative h-4 w-full bg-gray-700 rounded-fill overflow-hidden mt-1 m-2">
+
+                            <div className="relative h-2.5 flex-1 bg-slate-800 rounded-full overflow-hidden">
                                 {!isWeekend && (
-                                <div className="absolute h-full bg-slate-300 opacity-40" style={{left: `${openPos}%`, width: `${marketWidth}%`}}></div>
+                                    <div
+                                        className="absolute h-full bg-slate-600/60 rounded-full"
+                                        style={{ left: `${openPos}%`, width: `${marketWidth}%` }}
+                                    />
                                 )}
-                                <div className="absolute h-full w-0.5 bg-yellow-400 z-10 shadow-[0_0_10px_rgba(250,204,21,0.8)]" style={{left: `${currentPos}%`}}></div>
+                                <div
+                                    className="absolute h-full w-0.5 bg-amber-400"
+                                    style={{ left: `${currentPos}%` }}
+                                />
                             </div>
-                            <div className="flex items-center justify-start gap-2 w-[70px] shrink-0">
-                                <span className={`relative flex h-2 w-2`}>
-                                    {isOpen && (<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>)}
-                                    <span className={`relative inline-flex rounded-full h-2 w-2 ${isOpen? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
+
+                            <div className="flex items-center justify-end gap-2 w-20 shrink-0">
+                                <span className="relative flex h-2 w-2">
+                                    {isOpen && (
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                                    )}
+                                    <span
+                                        className={`relative inline-flex rounded-full h-2 w-2 ${
+                                            isOpen ? 'bg-emerald-500' : 'bg-rose-500'
+                                        }`}
+                                    />
                                 </span>
-                                <span className={`text-xs font-bold uppercase ${isOpen ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                <span
+                                    className={`text-xs font-medium uppercase ${
+                                        isOpen ? 'text-emerald-400' : 'text-rose-400'
+                                    }`}
+                                >
                                     {isOpen ? 'Open' : 'Closed'}
                                 </span>
                             </div>
                         </div>
                     )
-                }
-            )}
+                })}
             </div>
-        </div>
-    );
+        </section>
+    )
 }
 
 export default MarketHours

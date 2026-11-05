@@ -22,18 +22,19 @@ function CandleStickChart({data, onNeedMoreData}: CandlestickChartProps) {
             width: chartContainerRef.current.clientWidth,
             height: chartContainerRef.current.clientHeight || 400,
             layout: {
-                background: { color: '#141009' },
-                textColor: '#ffffff',
+                background: { color: '#0f172a' },
+                textColor: '#94a3b8',
             },
             grid: {
-                vertLines: { color: '#25211a' },
-                horzLines: { color: '#25211a' },
+                vertLines: { color: '#1e293b' },
+                horzLines: { color: '#1e293b' },
             },
             timeScale: {
+                borderColor: '#1e293b',
                 timeVisible: true,
                 tickMarkFormatter: (time: number | string, tickMarkType: TickMarkType, locale: string) => {
                     const date = typeof time === 'number'
-                        ? new Date(time*1000)
+                        ? new Date(time * 1000)
                         : new Date(time)
 
                     switch (tickMarkType) {
@@ -49,15 +50,18 @@ function CandleStickChart({data, onNeedMoreData}: CandlestickChartProps) {
                             return date.toLocaleDateString(locale)
                     }
                 }
-            }
+            },
+            rightPriceScale: {
+                borderColor: '#1e293b',
+            },
         });
 
         const candleSeries = chart.addSeries(CandlestickSeries, {
-            upColor: '#e3a24c',
-            downColor: '#594b38',
+            upColor: '#10b981',
+            downColor: '#f43f5e',
             borderVisible: false,
-            wickUpColor: '#e3a24c',
-            wickDownColor: '#594b38',
+            wickUpColor: '#10b981',
+            wickDownColor: '#f43f5e',
         });
 
         chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
@@ -98,7 +102,7 @@ function CandleStickChart({data, onNeedMoreData}: CandlestickChartProps) {
                     to: logicalRange.to + addedBarsCount
                 });
             }
-        }else {
+        } else {
             candleSeriesRef.current.priceScale().applyOptions({autoScale: true});
             timeScale.fitContent();
         }
@@ -106,10 +110,12 @@ function CandleStickChart({data, onNeedMoreData}: CandlestickChartProps) {
         prevFirstTimeRef.current = data[0].time;
     }, [data]);
 
-    return (<div
-        className="w-full h-full rounded-xl overflow-hidden"
-        ref={chartContainerRef}
-    />)
+    return (
+        <div
+            className="w-full h-full"
+            ref={chartContainerRef}
+        />
+    )
 }
 
 export default CandleStickChart
