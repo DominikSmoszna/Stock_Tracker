@@ -15,7 +15,7 @@ INDICATOR_MAP = {
 }
 
 @router.get("/chart/{symbol}")
-async def get_chart_data(
+def get_chart_data(
         symbol: str,
         interval: str = Query(default="1d", description="Data interval"),
         period: str = Query(default="1mo", alias="range", description="Period"),
@@ -88,7 +88,7 @@ class ChartAPI(BaseModel):
     indicators: dict[str, int]
 
 @router.post("/indicators")
-async def get_chart_data(chart_data: ChartAPI):
+def calculate_indicators(chart_data: ChartAPI):
     if not chart_data.candles:
         return {}
     df = pd.DataFrame(c.model_dump() for c in chart_data.candles)
@@ -108,7 +108,7 @@ class SearchResult(BaseModel):
     type: str
 
 @router.get("/search")
-async def get_search_results(
+def get_search_results(
         q: str,
     ):
     search_data = yf.Search(q)

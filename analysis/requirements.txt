@@ -1,6 +1,6 @@
-fastapi
-uvicorn
-yfinance
-pandas
-numpy
-pydantic
+fastapi==0.138.1
+uvicorn==0.49.0
+yfinance==1.4.1
+pandas==3.0.4
+numpy==2.5.0
+pydantic==2.13.4
