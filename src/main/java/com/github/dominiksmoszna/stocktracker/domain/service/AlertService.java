@@ -4,6 +4,7 @@ import com.github.dominiksmoszna.stocktracker.common.exception.PriceAlertNotFoun
 import com.github.dominiksmoszna.stocktracker.domain.model.AlertType;
 import com.github.dominiksmoszna.stocktracker.domain.model.PriceAlert;
 import com.github.dominiksmoszna.stocktracker.domain.port.in.ManageAlertUseCase;
+import com.github.dominiksmoszna.stocktracker.domain.port.out.ActiveAlertCachePort;
 import com.github.dominiksmoszna.stocktracker.domain.port.out.LoadAlertPort;
 import com.github.dominiksmoszna.stocktracker.domain.port.out.ManageAlertPort;
 import lombok.RequiredArgsConstructor;
@@ -18,21 +19,24 @@ public class AlertService implements ManageAlertUseCase {
 
     private final LoadAlertPort loadAlertPort;
     private final ManageAlertPort manageAlertPort;
+    private final ActiveAlertCachePort activeAlertCachePort;
 
 
     @Override
     public PriceAlert addAlert(UUID userId, String ticker, BigDecimal threshold, AlertType type) {
         UUID id = UUID.randomUUID();
-        PriceAlert priceAlert = new PriceAlert(id, userId, ticker, threshold, type);
+        PriceAlert priceAlert = PriceAlert.active(id, userId, ticker, threshold, type);
         manageAlertPort.addAlert(priceAlert);
+        activeAlertCachePort.addActiveAlert(priceAlert);
         return priceAlert;
     }
 
     @Override
     public void removeAlert(UUID alertId) {
-        Optional.ofNullable(loadAlertPort.loadPriceAlert(alertId))
-                .ifPresentOrElse(priceAlert -> {manageAlertPort.removeAlert(alertId);},
-                        () -> {throw new PriceAlertNotFoundException("Alert not found");});
+        PriceAlert priceAlert = Optional.ofNullable(loadAlertPort.loadPriceAlert(alertId))
+                .orElseThrow(() -> new PriceAlertNotFoundException("Alert not found"));
+        manageAlertPort.removeAlert(alertId);
+        activeAlertCachePort.removeActiveAlert(priceAlert);
     }
 
     @Override

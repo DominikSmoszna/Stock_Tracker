@@ -28,7 +28,8 @@ public class DomainConfig {
             PriceHistoryPort priceHistoryPort,
             PriceUpdatePort priceUpdatePort,
             SendNotificationPort sendNotificationPort,
-            LoadAlertPort loadAlertPort
+            ActiveAlertCachePort activeAlertCachePort,
+            ManageAlertPort manageAlertPort
     ) {
         return new MarketDataService(
                 currentPricePort,
@@ -36,18 +37,21 @@ public class DomainConfig {
                 priceHistoryPort,
                 priceUpdatePort,
                 sendNotificationPort,
-                loadAlertPort
+                activeAlertCachePort,
+                manageAlertPort
         );
     }
 
     @Bean
     public AlertService alertService(
             LoadAlertPort loadAlertPort,
-            ManageAlertPort manageAlertPort
+            ManageAlertPort manageAlertPort,
+            ActiveAlertCachePort activeAlertCachePort
     ) {
         return new AlertService(
                 loadAlertPort,
-                manageAlertPort
+                manageAlertPort,
+                activeAlertCachePort
         );
     }
 

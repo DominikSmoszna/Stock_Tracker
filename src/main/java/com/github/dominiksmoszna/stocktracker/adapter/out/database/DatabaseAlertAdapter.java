@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -39,9 +40,9 @@ public class DatabaseAlertAdapter implements LoadAlertPort, ManageAlertPort {
     }
 
     @Override
-    public List<PriceAlert> loadPriceAlertsByTicker(String ticker) {
-        log.info("Loading price alerts for ticker {}", ticker);
-        return repository.findAllByTicker(ticker).stream().map(this::toDomain).toList();
+    public List<PriceAlert> loadActivePriceAlerts() {
+        log.info("Loading all active price alerts");
+        return repository.findAllByTriggeredFalse().stream().map(this::toDomain).toList();
     }
 
     @Override
@@ -60,13 +61,27 @@ public class DatabaseAlertAdapter implements LoadAlertPort, ManageAlertPort {
         log.info("Removing alert {}", alertId);
     }
 
+    @Override
+    public boolean markAlertTriggered(UUID alertId, Instant triggeredAt) {
+        try {
+            boolean updated = repository.markTriggered(alertId, triggeredAt) == 1;
+            log.info("Marking alert {} as triggered at {} (updated: {})", alertId, triggeredAt, updated);
+            return updated;
+        } catch (RuntimeException e) {
+            log.error("Failed to mark alert {} as triggered", alertId, e);
+            throw e;
+        }
+    }
+
     private AlertEntity toEntity(PriceAlert alert) {
         return new AlertEntity(
                 alert.id(),
                 alert.userId(),
                 alert.ticker(),
                 alert.threshold(),
-                alert.type()
+                alert.type(),
+                alert.triggered(),
+                alert.triggeredAt()
         );
     }
 
@@ -76,7 +91,9 @@ public class DatabaseAlertAdapter implements LoadAlertPort, ManageAlertPort {
                 alert.getUserId(),
                 alert.getTicker(),
                 alert.getThreshold(),
-                alert.getType()
+                alert.getType(),
+                alert.isTriggered(),
+                alert.getTriggeredAt()
         );
     }
 
