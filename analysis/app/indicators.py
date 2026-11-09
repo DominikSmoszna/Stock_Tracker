@@ -10,25 +10,26 @@ DEFAULT_PERIODS = {
 }
 
 def parse_indicators(indicators_str: str) -> dict[str, int]:
-    indicators_dict = {}
+    indicators_dict: dict[str, int] = {}
     for pair in indicators_str.split(','):
         pair = pair.strip()
         if not pair:
             continue
 
         element = pair.split(":")
-        if len(element) == 2:
-            key = element[0].strip()
-            value = element[1].strip()
-            if value.isdigit():
-                indicators_dict[key] = int(value)
-            else:
-                value = DEFAULT_PERIODS[key]
-                indicators_dict[key] = int(value)
+        key = element[0].strip()
+        if key not in DEFAULT_PERIODS:
+            continue
+
+        if len(element) == 2 and element[1].strip().isdigit():
+            period = int(element[1].strip())
         else:
-            key = element[0].strip()
-            value = DEFAULT_PERIODS[key]
-            indicators_dict[key] = int(value)
+            period = int(DEFAULT_PERIODS[key])
+
+        if key in ("sma", "ema"):
+            indicators_dict[f"{key}:{period}"] = period
+        else:
+            indicators_dict[key] = period
     return indicators_dict
 
 def _calculate_bb(close: pd.Series, period: int) -> pd.DataFrame:

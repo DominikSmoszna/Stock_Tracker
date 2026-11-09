@@ -64,14 +64,11 @@ def get_chart_data(
 
         result = {"candles": chart_data}
 
-        if "sma" in indicator_dict:
-            result["sma"] = calculate_sma(df, period=indicator_dict['sma'])
-        if "ema" in indicator_dict:
-            result["ema"] = calculate_ema(df, period=indicator_dict['ema'])
-        if "rsi" in indicator_dict:
-            result["rsi"] = calculate_rsi(df, period=indicator_dict['rsi'])
-        if "bb" in indicator_dict:
-            result["bb"] = calculate_bb(df, period=indicator_dict['bb'])
+        for indicator_key, period_val in indicator_dict.items():
+            base_name = indicator_key.split(":")[0]
+            calc_function = INDICATOR_MAP.get(base_name)
+            if calc_function is not None:
+                result[indicator_key] = calc_function(df, period=period_val)
 
         return result
 
@@ -95,11 +92,12 @@ def calculate_indicators(chart_data: ChartAPI):
     df = df.sort_values('time').reset_index(drop=True)
     result = {}
 
-    for indicator in chart_data.indicators:
-        calc_function = INDICATOR_MAP.get(indicator)
+    for indicator_key, period_val in chart_data.indicators.items():
+        base_name = indicator_key.split(":")[0]
+        calc_function = INDICATOR_MAP.get(base_name)
         if calc_function is None:
             continue
-        result[indicator] = calc_function(df,chart_data.indicators[indicator])
+        result[indicator_key] = calc_function(df, period_val)
     return result
 
 class SearchResult(BaseModel):
@@ -125,4 +123,3 @@ def get_search_results(
                 )
             )
     return results
-
