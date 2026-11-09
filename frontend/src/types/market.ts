@@ -44,17 +44,43 @@ export interface BollingerBandPoint {
     lower: number
 }
 
-export interface ChartResponse {
-    candles: CandleData[]
-    sma?: LineData[]
-    ema?: LineData[]
+export interface MovingAverageSeriesData {
+    key: string
+    color: string
+    data: LineData[]
+}
+
+export interface IndicatorData {
+    movingAverages?: MovingAverageSeriesData[]
+    rsi?: LineData[]
+    rsiColor?: string
+    bb?: BollingerBandPoint[]
+    bbColor?: string
+}
+
+export interface RawIndicatorsResponse {
     rsi?: LineData[]
     bb?: BollingerBandPoint[]
+    [key: string]: any
+}
+
+export interface ChartResponse extends RawIndicatorsResponse {
+    candles: CandleData[]
+}
+
+export interface HoveredCandle {
+    open: number
+    high: number
+    low: number
+    close: number
+    rsi?: number
 }
 
 export interface CandlestickChartProps {
     data: CandleData[]
+    indicators?: IndicatorData
     onNeedMoreData: () => void
+    onCrosshairMove?: (candle: HoveredCandle | null) => void
 }
 
 export interface SearchResult {

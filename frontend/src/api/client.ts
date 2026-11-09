@@ -1,4 +1,4 @@
-import { ChartResponse, MarketQuote, SearchResult } from "../types/market.ts";
+import { CandleData, ChartResponse, MarketQuote, RawIndicatorsResponse, SearchResult } from "../types/market.ts";
 
 const trimTrailingSlash = (url: string): string => url.replace(/\/+$/, "");
 
@@ -45,6 +45,21 @@ export async function fetchChartData(
     );
     if (!response.ok) {
         throw new Error("Error fetching chart data");
+    }
+    return response.json();
+}
+
+export async function fetchIndicators(
+    candles: CandleData[],
+    indicators: Record<string, number>
+): Promise<RawIndicatorsResponse> {
+    const response = await fetch(`${PYTHON_API_BASE_URL}/api/indicators`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ candles, indicators }),
+    });
+    if (!response.ok) {
+        throw new Error("Error calculating indicators");
     }
     return response.json();
 }
