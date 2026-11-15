@@ -58,11 +58,13 @@ public class DomainConfig {
     @Bean
     public PortfolioService portfolioService(
             LoadPortfolioPort loadPortfolioPort,
-            ManagePortfolioPort managePortfolioPort
+            ManagePortfolioPort managePortfolioPort,
+            InstrumentInfoPort instrumentInfoPort
     ) {
         return new PortfolioService(
                 loadPortfolioPort,
-                managePortfolioPort
+                managePortfolioPort,
+                instrumentInfoPort
         );
     }
 

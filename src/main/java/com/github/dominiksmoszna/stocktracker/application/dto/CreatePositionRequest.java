@@ -19,7 +19,7 @@ public record CreatePositionRequest(
         BigDecimal purchasePrice,
         @NotNull
         LocalDate purchaseDate,
-        @NotNull
+        // Optional: resolved from the instrument's trading currency (GET /api/instrument/{symbol}) when omitted
         Currency currency
 ) {
 }
