@@ -3,6 +3,7 @@ from uuid import UUID
 import pandas as pd
 from fastapi import APIRouter, HTTPException, status
 from app.schemas.portfolio import (PortfolioBackfillRequest, PortfolioBackfillResponse, PositionHistory, PositionValuePoint, TotalValuePoint)
+from ..instruments import get_price_divisors
 from ..price_series import (align_and_fill_series, fetch_multiple_price_series, validate_aligned_data,)
 
 router = APIRouter(prefix="/api/portfolio", tags=["Portfolio"])
@@ -32,6 +33,13 @@ def portfolio_backfill(
         start_date=fetch_start,
         end_date=end_date,
     )
+
+    # Yahoo quotes some instruments in minor units (e.g. LSE stocks in GBp). Positions carry the
+    # normalized currency (GBP), so prices must be converted to the major unit before valuation.
+    price_divisors = get_price_divisors(symbols)
+    for symbol, divisor in price_divisors.items():
+        if divisor != 1 and symbol in prices_dict:
+            prices_dict[symbol] = prices_dict[symbol] / divisor
 
     currencies = list(
         dict.fromkeys(
