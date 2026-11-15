@@ -59,12 +59,14 @@ public class DomainConfig {
     public PortfolioService portfolioService(
             LoadPortfolioPort loadPortfolioPort,
             ManagePortfolioPort managePortfolioPort,
-            InstrumentInfoPort instrumentInfoPort
+            InstrumentInfoPort instrumentInfoPort,
+            PortfolioValuationPort portfolioValuationPort
     ) {
         return new PortfolioService(
                 loadPortfolioPort,
                 managePortfolioPort,
-                instrumentInfoPort
+                instrumentInfoPort,
+                portfolioValuationPort
         );
     }
 

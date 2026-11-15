@@ -1,6 +1,7 @@
 package com.github.dominiksmoszna.stocktracker.domain.port.in;
 
 import com.github.dominiksmoszna.stocktracker.domain.model.PortfolioPosition;
+import com.github.dominiksmoszna.stocktracker.domain.model.PortfolioValuationResult;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -12,4 +13,5 @@ public interface ManagePortfolioUseCase {
     PortfolioPosition addPosition(UUID userId, String ticker, BigDecimal quantity, BigDecimal purchasePrice, LocalDate purchaseDate, Currency currency);
     void removePosition(UUID positionId);
     List<PortfolioPosition> getPositions(UUID userId);
+    PortfolioValuationResult getPortfolioValuation(UUID userId, Currency targetCurrency, LocalDate endDate);
 }

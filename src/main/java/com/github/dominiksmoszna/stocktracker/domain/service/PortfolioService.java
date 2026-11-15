@@ -4,10 +4,12 @@ import com.github.dominiksmoszna.stocktracker.common.exception.PortfolioPosition
 import com.github.dominiksmoszna.stocktracker.common.exception.SymbolNotFoundException;
 import com.github.dominiksmoszna.stocktracker.domain.model.InstrumentInfo;
 import com.github.dominiksmoszna.stocktracker.domain.model.PortfolioPosition;
+import com.github.dominiksmoszna.stocktracker.domain.model.PortfolioValuationResult;
 import com.github.dominiksmoszna.stocktracker.domain.port.in.ManagePortfolioUseCase;
 import com.github.dominiksmoszna.stocktracker.domain.port.out.InstrumentInfoPort;
 import com.github.dominiksmoszna.stocktracker.domain.port.out.LoadPortfolioPort;
 import com.github.dominiksmoszna.stocktracker.domain.port.out.ManagePortfolioPort;
+import com.github.dominiksmoszna.stocktracker.domain.port.out.PortfolioValuationPort;
 import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
@@ -23,6 +25,7 @@ public class PortfolioService implements ManagePortfolioUseCase {
     private final LoadPortfolioPort loadPortfolioPort;
     private final ManagePortfolioPort managePortfolioPort;
     private final InstrumentInfoPort instrumentInfoPort;
+    private final PortfolioValuationPort portfolioValuationPort;
 
     /**
      * @param currency explicit position currency; when {@code null} it is resolved automatically
@@ -54,4 +57,11 @@ public class PortfolioService implements ManagePortfolioUseCase {
 
     @Override
     public List<PortfolioPosition> getPositions(UUID userId) {return loadPortfolioPort.loadPositions(userId);}
+
+    @Override
+    public PortfolioValuationResult getPortfolioValuation(UUID userId, Currency targetCurrency, LocalDate endDate) {
+        Currency resolvedCurrency = targetCurrency != null ? targetCurrency : Currency.getInstance("PLN");
+        List<PortfolioPosition> positions = loadPortfolioPort.loadPositions(userId);
+        return portfolioValuationPort.getHistoricalValuation(positions, resolvedCurrency, endDate);
+    }
 }
