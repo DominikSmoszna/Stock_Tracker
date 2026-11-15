@@ -2,7 +2,9 @@ package com.github.dominiksmoszna.stocktracker.adapter.in.rest;
 
 import com.github.dominiksmoszna.stocktracker.application.dto.CreatePositionRequest;
 import com.github.dominiksmoszna.stocktracker.application.dto.PortfolioPositionDto;
+import com.github.dominiksmoszna.stocktracker.application.dto.PortfolioValuationDto;
 import com.github.dominiksmoszna.stocktracker.common.mapper.PortfolioMapper;
+import com.github.dominiksmoszna.stocktracker.domain.model.PortfolioValuationResult;
 import com.github.dominiksmoszna.stocktracker.domain.port.in.ManagePortfolioUseCase;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.util.Currency;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,5 +38,15 @@ public class PortfolioController {
     public ResponseEntity<Void> removePosition(@PathVariable("positionId") UUID positionId) {
         managePortfolioUseCase.removePosition(positionId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{userId}/valuation")
+    public ResponseEntity<PortfolioValuationDto> getPortfolioValuation(
+            @PathVariable("userId") UUID userId,
+            @RequestParam(value = "currency", defaultValue = "PLN") Currency currency,
+            @RequestParam(value = "endDate", required = false) LocalDate endDate
+    ){
+        PortfolioValuationResult result = managePortfolioUseCase.getPortfolioValuation(userId, currency, endDate);
+        return ResponseEntity.ok(PortfolioMapper.toValuationDto(result, currency));
     }
 }
