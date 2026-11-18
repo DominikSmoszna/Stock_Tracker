@@ -42,7 +42,7 @@ def get_chart_data(
             if interval in ['1d', '5d', '1wk', '1mo', '3mo']:
                 df[date_col] = df[date_col].dt.strftime('%Y-%m-%d')
             else:
-                df[date_col] = df[date_col].dt.tz_convert('UTC').astype('int64')
+                df[date_col] = df[date_col].dt.tz_convert('UTC').dt.as_unit('s').astype('int64')
 
         df =df.rename(columns={
             date_col: 'time',

@@ -145,8 +145,10 @@ function ChartsPage() {
             const daysToSubtract = INTERVAL_OFFSET_MAP[currentIntervalRef.current] ?? 30;
             startDate.setDate(startDate.getDate() - daysToSubtract);
 
+            const endDate = new Date(currentOldestDate);
+            endDate.setDate(endDate.getDate() +1);
             const startParam = toDateString(startDate);
-            const endParam = toDateString(oldestTimeRef.current);
+            const endParam = toDateString(endDate);
 
             const newData = await fetchChartData(currentSymbolRef.current, {
                 interval: currentIntervalRef.current,
