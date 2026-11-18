@@ -16,6 +16,7 @@ public record CreatePositionRequest(
         @NotBlank
         String ticker,
         @NotNull
+        @Positive
         BigDecimal quantity,
         @NotNull
         @Positive

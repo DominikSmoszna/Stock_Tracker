@@ -33,7 +33,7 @@ public class WatchlistService implements ManageWatchlistUseCase {
         String normalizedTicker = ticker.trim().toUpperCase();
         Optional.ofNullable(loadWatchlistPort.loadWatchlist(watchlistId))
                 .ifPresentOrElse(watchlist -> {manageWatchlistPort.removeTickerFromWatchlist(watchlistId, normalizedTicker);
-                                                        if (!loadWatchlistPort.checkWatchlistForTicker(normalizedTicker)) {stockSubscriptionPort.unsubscribe(ticker);};},
+                                                        if (!loadWatchlistPort.checkWatchlistForTicker(normalizedTicker)) {stockSubscriptionPort.unsubscribe(normalizedTicker);};},
                         () -> {throw new WatchlistNotFoundException("Watchlist not found");});
     }
 
