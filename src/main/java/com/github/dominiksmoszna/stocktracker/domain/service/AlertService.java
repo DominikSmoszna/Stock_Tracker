@@ -24,8 +24,9 @@ public class AlertService implements ManageAlertUseCase {
 
     @Override
     public PriceAlert addAlert(UUID userId, String ticker, BigDecimal threshold, AlertType type) {
+        String normalizedTicker = ticker.trim().toUpperCase();
         UUID id = UUID.randomUUID();
-        PriceAlert priceAlert = PriceAlert.active(id, userId, ticker, threshold, type);
+        PriceAlert priceAlert = PriceAlert.active(id, userId, normalizedTicker, threshold, type);
         manageAlertPort.addAlert(priceAlert);
         activeAlertCachePort.addActiveAlert(priceAlert);
         return priceAlert;
@@ -46,6 +47,6 @@ public class AlertService implements ManageAlertUseCase {
 
     @Override
     public List<PriceAlert> getPriceAlertsByTicker(UUID userId, String ticker) {
-        return loadAlertPort.loadPriceAlertsByTicker(userId, ticker);
+        return loadAlertPort.loadPriceAlertsByTicker(userId, ticker.trim().toUpperCase());
     }
 }

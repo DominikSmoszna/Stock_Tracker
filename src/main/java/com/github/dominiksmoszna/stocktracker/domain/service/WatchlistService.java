@@ -21,17 +21,19 @@ public class WatchlistService implements ManageWatchlistUseCase {
 
     @Override
     public void addTicker(String ticker, UUID watchlistId) {
+        String normalizedTicker = ticker.trim().toUpperCase();
         Optional.ofNullable(loadWatchlistPort.loadWatchlist(watchlistId))
-                .ifPresentOrElse(watchlist -> {manageWatchlistPort.addTickerToWatchlist(watchlistId, ticker);
-                                                        stockSubscriptionPort.subscribe(ticker);},
+                .ifPresentOrElse(watchlist -> {manageWatchlistPort.addTickerToWatchlist(watchlistId, normalizedTicker);
+                                                        stockSubscriptionPort.subscribe(normalizedTicker);},
                         () -> {throw new WatchlistNotFoundException("Watchlist not found");});
     }
 
     @Override
     public void removeTicker(String ticker, UUID watchlistId) {
+        String normalizedTicker = ticker.trim().toUpperCase();
         Optional.ofNullable(loadWatchlistPort.loadWatchlist(watchlistId))
-                .ifPresentOrElse(watchlist -> {manageWatchlistPort.removeTickerFromWatchlist(watchlistId, ticker);
-                                                        if (!loadWatchlistPort.checkWatchlistForTicker(ticker)) {stockSubscriptionPort.unsubscribe(ticker);};},
+                .ifPresentOrElse(watchlist -> {manageWatchlistPort.removeTickerFromWatchlist(watchlistId, normalizedTicker);
+                                                        if (!loadWatchlistPort.checkWatchlistForTicker(normalizedTicker)) {stockSubscriptionPort.unsubscribe(ticker);};},
                         () -> {throw new WatchlistNotFoundException("Watchlist not found");});
     }
 
