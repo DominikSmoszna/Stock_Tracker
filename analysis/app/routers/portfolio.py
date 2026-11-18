@@ -14,8 +14,16 @@ BUFFER_DAYS = 7
 def portfolio_backfill(
         request: PortfolioBackfillRequest,
 ) -> PortfolioBackfillResponse:
-    start_date = min(position.buy_date for position in request.positions)
     end_date = request.end_date or date.today()
+    active_positions = [
+        position for position in request.positions
+        if position.buy_date <= end_date
+    ]
+    if not active_positions:
+        return PortfolioBackfillResponse(total=[], positions=[])
+
+    start_date = min(position.buy_date for position in active_positions)
+
 
     fetch_start = (
         pd.Timestamp(start_date) - pd.Timedelta(days=BUFFER_DAYS)
@@ -24,7 +32,7 @@ def portfolio_backfill(
     symbols = list(
         dict.fromkeys(
             position.symbol
-            for position in request.positions
+            for position in active_positions
         )
     )
 
@@ -44,7 +52,7 @@ def portfolio_backfill(
     currencies = list(
         dict.fromkeys(
             position.currency
-            for position in request.positions
+            for position in active_positions
         )
     )
 
@@ -117,7 +125,7 @@ def portfolio_backfill(
 
     position_histories: list[PositionHistory] = []
 
-    for position in request.positions:
+    for position in active_positions:
         value_series = (
             position.quantity * prices_df[position.symbol] * fx_df[position.currency]
         )
