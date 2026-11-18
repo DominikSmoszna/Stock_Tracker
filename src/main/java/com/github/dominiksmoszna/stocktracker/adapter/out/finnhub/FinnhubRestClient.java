@@ -29,7 +29,7 @@ public class FinnhubRestClient implements MarketDataPort {
                 .retrieve()
                 .body(FinnhubQuoteDTO.class);
 
-        if(dto == null) {
+        if(dto == null || dto.currentPrice() == null || (dto.currentPrice().signum() == 0 && dto.timestamp() == 0)) {
             throw new SymbolNotFoundException("No quote data for symbol: " + symbol);
         }
 
