@@ -2,6 +2,8 @@ package com.github.dominiksmoszna.stocktracker.application.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -16,10 +18,11 @@ public record CreatePositionRequest(
         @NotNull
         BigDecimal quantity,
         @NotNull
+        @Positive
         BigDecimal purchasePrice,
         @NotNull
+        @PastOrPresent
         LocalDate purchaseDate,
-        // Optional: resolved from the instrument's trading currency (GET /api/instrument/{symbol}) when omitted
         Currency currency
 ) {
 }
