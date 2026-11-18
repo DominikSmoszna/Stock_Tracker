@@ -11,12 +11,13 @@ import tools.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 public class FinnhubWebSocketClient extends WebSocketClient {
 
     private static final long RECONNECT_DELAY_MS = 5_000L;
-
+    private final AtomicBoolean reconnecting = new AtomicBoolean(false);
     private final ProcessMarketDataUseCase processMarketDataUseCase;
     private final Runnable onConnectedCallback;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -67,28 +68,39 @@ public class FinnhubWebSocketClient extends WebSocketClient {
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
-        if (reconnectEnabled && remote) {
-            log.info("Websocket connection closed by remote (code: {}, reason: {}), scheduling reconnect", code, reason);
-            Thread reconnectThread = new Thread(() -> {
-                try {
+        if (!reconnectEnabled) {
+            log.info("Websocket connection closed (code: {}, reason: {}, remote: {})", code, reason, remote);
+            return;
+        }
+        if (!reconnecting.compareAndSet(false, true)) {
+            return;
+        }
+        log.info("Websocket connection closed (code: {}, reason: {}, remote: {}), starting reconnect loop", code, reason, remote);
+        Thread reconnectThread = new Thread(()->{
+            try {
+                while (reconnectEnabled && !isOpen()) {
                     Thread.sleep(RECONNECT_DELAY_MS);
                     if (!reconnectEnabled) {
                         return;
                     }
                     log.info("Trying to reconnect to Finnhub");
-                    reconnectBlocking();
-                } catch (InterruptedException e) {
-                    log.error("Reconnection interrupted", e);
-                    Thread.currentThread().interrupt();
-                } catch (Exception e) {
-                    log.error("Error while trying to reconnect to Finnhub", e);
+                    try {
+                        if (reconnectBlocking()) {
+                            return;
+                        }
+                    } catch (Exception e) {
+                        log.error("Error while trying to reconnect to Finnhub", e);
+                    }
                 }
-            }, "finnhub-ws-reconnect");
-            reconnectThread.setDaemon(true);
-            reconnectThread.start();
-        } else {
-            log.info("Websocket connection closed (code: {}, reason: {}, remote: {})", code, reason, remote);
+            } catch (InterruptedException e) {
+                log.error("Reconnection interrupted", e);
+                Thread.currentThread().interrupt();
+            } finally {
+                reconnecting.set(false);
         }
+        }, "finnhub-ws-reconnect");
+        reconnectThread.setDaemon(true);
+        reconnectThread.start();
     }
 
     @Override
