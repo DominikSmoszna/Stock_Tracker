@@ -57,7 +57,10 @@ public class DatabasePortfolioAdapter implements LoadPortfolioPort, ManagePortfo
                 position.quantity(),
                 position.purchasePrice(),
                 position.purchaseDate(),
-                position.currency().getCurrencyCode()
+                position.currency().getCurrencyCode(),
+                position.initialQuantity(),
+                position.status(),
+                position.closedDate()
         );
     }
 
@@ -69,7 +72,10 @@ public class DatabasePortfolioAdapter implements LoadPortfolioPort, ManagePortfo
                 position.getQuantity(),
                 position.getPurchasePrice(),
                 position.getPurchaseDate(),
-                Currency.getInstance(position.getCurrency())
+                Currency.getInstance(position.getCurrency()),
+                position.getInitialQuantity(),
+                position.getStatus(),
+                position.getClosedDate()
         );
     }
 }

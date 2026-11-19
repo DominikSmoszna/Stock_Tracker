@@ -16,7 +16,10 @@ public class PortfolioMapper {
                 portfolioPosition.quantity(),
                 portfolioPosition.purchasePrice(),
                 portfolioPosition.purchaseDate(),
-                portfolioPosition.currency()
+                portfolioPosition.currency(),
+                portfolioPosition.initialQuantity(),
+                portfolioPosition.status(),
+                portfolioPosition.closedDate()
         );
     }
 

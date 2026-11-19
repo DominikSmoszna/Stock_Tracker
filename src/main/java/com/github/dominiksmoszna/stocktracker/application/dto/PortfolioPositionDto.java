@@ -1,5 +1,7 @@
 package com.github.dominiksmoszna.stocktracker.application.dto;
 
+import com.github.dominiksmoszna.stocktracker.domain.model.PositionStatus;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Currency;
@@ -12,6 +14,9 @@ public record PortfolioPositionDto(
         BigDecimal quantity,
         BigDecimal purchasePrice,
         LocalDate purchaseDate,
-        Currency currency
+        Currency currency,
+        BigDecimal initialQuantity,
+        PositionStatus status,
+        LocalDate closedDate
 ) {
 }
