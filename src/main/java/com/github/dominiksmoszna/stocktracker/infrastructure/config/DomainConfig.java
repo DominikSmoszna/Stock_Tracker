@@ -60,13 +60,18 @@ public class DomainConfig {
             LoadPortfolioPort loadPortfolioPort,
             ManagePortfolioPort managePortfolioPort,
             InstrumentInfoPort instrumentInfoPort,
-            PortfolioValuationPort portfolioValuationPort
+            PortfolioValuationPort portfolioValuationPort,
+            PortfolioTransactionPort portfolioTransactionPort,
+            ExchangeRatePort exchangeRatePort
+
     ) {
         return new PortfolioService(
                 loadPortfolioPort,
                 managePortfolioPort,
                 instrumentInfoPort,
-                portfolioValuationPort
+                portfolioValuationPort,
+                portfolioTransactionPort,
+                exchangeRatePort
         );
     }
 

@@ -43,4 +43,14 @@ public class GlobalExceptionHandler {
                 e.getFailedFxSymbols()
         ));
     }
+
+    @ExceptionHandler(InsufficientCashException.class)
+    public ResponseEntity<ErrorResponse> handleInsufficientCashException(InsufficientCashException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(e.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidPortfolioOperationException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidPortfolioOperationException(InvalidPortfolioOperationException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(e.getMessage()));
+    }
 }

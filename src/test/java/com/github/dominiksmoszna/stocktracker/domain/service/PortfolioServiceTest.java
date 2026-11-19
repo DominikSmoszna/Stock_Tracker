@@ -1,16 +1,16 @@
 package com.github.dominiksmoszna.stocktracker.domain.service;
 
 import com.github.dominiksmoszna.stocktracker.common.exception.SymbolNotFoundException;
+import com.github.dominiksmoszna.stocktracker.domain.model.ExchangeRatePoint;
 import com.github.dominiksmoszna.stocktracker.domain.model.InstrumentInfo;
 import com.github.dominiksmoszna.stocktracker.domain.model.PortfolioPosition;
+import com.github.dominiksmoszna.stocktracker.domain.model.PortfolioTransaction;
 import com.github.dominiksmoszna.stocktracker.domain.model.PortfolioValuationResult;
 import com.github.dominiksmoszna.stocktracker.domain.model.PortfolioValuePoint;
 import com.github.dominiksmoszna.stocktracker.domain.model.PositionValuationHistory;
 import com.github.dominiksmoszna.stocktracker.domain.model.PositionValuePoint;
-import com.github.dominiksmoszna.stocktracker.domain.port.out.InstrumentInfoPort;
-import com.github.dominiksmoszna.stocktracker.domain.port.out.LoadPortfolioPort;
-import com.github.dominiksmoszna.stocktracker.domain.port.out.ManagePortfolioPort;
-import com.github.dominiksmoszna.stocktracker.domain.port.out.PortfolioValuationPort;
+import com.github.dominiksmoszna.stocktracker.domain.model.TransactionType;
+import com.github.dominiksmoszna.stocktracker.domain.port.out.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,6 +48,12 @@ class PortfolioServiceTest {
     @Mock
     private PortfolioValuationPort portfolioValuationPort;
 
+    @Mock
+    private PortfolioTransactionPort portfolioTransactionPort;
+
+    @Mock
+    private ExchangeRatePort exchangeRatePort;
+
     private PortfolioService portfolioService;
 
     @BeforeEach
@@ -56,30 +62,53 @@ class PortfolioServiceTest {
                 loadPortfolioPort,
                 managePortfolioPort,
                 instrumentInfoPort,
-                portfolioValuationPort
+                portfolioValuationPort,
+                portfolioTransactionPort,
+                exchangeRatePort
         );
     }
 
     @Test
     void shouldResolveCurrencyFromInstrumentWhenNotProvided() {
+        Currency gbp = Currency.getInstance("GBP");
+        Currency pln = Currency.getInstance("PLN");
         when(instrumentInfoPort.loadInstrument("VOD.L"))
-                .thenReturn(Optional.of(new InstrumentInfo("VOD.L", "Vodafone", Currency.getInstance("GBP"))));
+                .thenReturn(Optional.of(new InstrumentInfo("VOD.L", "Vodafone", gbp)));
+        when(exchangeRatePort.getRates(gbp, pln, DATE.minusDays(7), DATE))
+                .thenReturn(List.of(new ExchangeRatePoint(DATE, new BigDecimal("5.00"))));
+        when(portfolioTransactionPort.loadTransactionsByUser(USER_ID))
+                .thenReturn(List.of(new PortfolioTransaction(
+                        UUID.randomUUID(), USER_ID, TransactionType.DEPOSIT, DATE,
+                        null, null, null, null, pln, BigDecimal.ONE, new BigDecimal("1000.00")
+                )));
 
         PortfolioPosition position = portfolioService.addPosition(USER_ID, " vod.l ", QUANTITY, PRICE, DATE, null);
 
-        assertThat(position.currency()).isEqualTo(Currency.getInstance("GBP"));
+        assertThat(position.currency()).isEqualTo(gbp);
         assertThat(position.ticker()).isEqualTo("VOD.L");
         verify(managePortfolioPort).savePosition(position);
+        verify(portfolioTransactionPort).saveTransaction(any(PortfolioTransaction.class));
     }
 
     @Test
     void shouldUseExplicitCurrencyWithoutCallingInstrumentService() {
-        PortfolioPosition position = portfolioService.addPosition(
-                USER_ID, "AAPL", QUANTITY, PRICE, DATE, Currency.getInstance("USD"));
+        Currency usd = Currency.getInstance("USD");
+        Currency pln = Currency.getInstance("PLN");
+        when(exchangeRatePort.getRates(usd, pln, DATE.minusDays(7), DATE))
+                .thenReturn(List.of(new ExchangeRatePoint(DATE, new BigDecimal("4.00"))));
+        when(portfolioTransactionPort.loadTransactionsByUser(USER_ID))
+                .thenReturn(List.of(new PortfolioTransaction(
+                        UUID.randomUUID(), USER_ID, TransactionType.DEPOSIT, DATE,
+                        null, null, null, null, pln, BigDecimal.ONE, new BigDecimal("1000.00")
+                )));
 
-        assertThat(position.currency()).isEqualTo(Currency.getInstance("USD"));
+        PortfolioPosition position = portfolioService.addPosition(
+                USER_ID, "AAPL", QUANTITY, PRICE, DATE, usd);
+
+        assertThat(position.currency()).isEqualTo(usd);
         verifyNoInteractions(instrumentInfoPort);
         verify(managePortfolioPort).savePosition(position);
+        verify(portfolioTransactionPort).saveTransaction(any(PortfolioTransaction.class));
     }
 
     @Test
